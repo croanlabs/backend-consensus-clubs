@@ -12,7 +12,7 @@ passport.use(
     {
       consumerKey: config.twitterConsumerKey,
       consumerSecret: config.twitterConsumerSecret,
-      callbackURL: 'http://127.0.0.1:8080/auth/twitter/callback',
+      callbackURL: config.twitterCallbackUrl,
     },
     (token, tokenSecret, profile, done) => {
       console.log(`User connected! \n
