@@ -1,0 +1,32 @@
+{
+  "name": "api-consensus-clubs",
+  "version": "0.0.1",
+  "description": "REST API of Consensus Clubs",
+  "main": "index.js",
+  "scripts": {
+    "pretest": "eslint --ignore-path .gitignore .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rflxvty/api-consensus-clubs.git"
+  },
+  "author": "Consensus Clubs",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rflxvty/api-consensus-clubs/issues"
+  },
+  "homepage": "https://github.com/rflxvty/api-consensus-clubs#readme",
+  "dependencies": {
+    "cookie-parser": "^1.4.3",
+    "express": "^4.16.3",
+    "express-session": "^1.15.6",
+    "passport": "^0.4.0",
+    "passport-twitter": "^1.0.4"
+  },
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "eslint-config-airbnb-base": "^13.0.0",
+    "eslint-plugin-import": "^2.13.0"
+  }
+}
