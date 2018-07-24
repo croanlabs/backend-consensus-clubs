@@ -1,11 +1,13 @@
-module.exports = (sequelize, DataTypes) => {
-  let User = sequelize.define('User', {
-    username: DataTypes.STRING,
-    externalInfo: DataTypes.JSON,
-  }, {});
-  User.associate = (models) => {
-    // associations can be defined here
-  };
-  return User;
-};
+const db = require('../config/database');
+const Sequelize = require('sequelize');
 
+const User = db.define(
+  'User',
+  {
+    username: Sequelize.STRING,
+    externalInfo: Sequelize.JSON,
+  },
+  {},
+);
+
+module.exports = User;
