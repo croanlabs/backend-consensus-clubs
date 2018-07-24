@@ -1,9 +1,10 @@
 const Sequelize = require('sequelize');
 const config = require('./config');
 
-const sequelize = new Sequelize(config.dbName, config.postgresUser,
+const sequelize = new Sequelize(config.postgresDbName, config.postgresUser,
   config.postgresPass, {
     host: config.postgresHost,
+    port: config.postgresPort,
     dialect: 'postgres',
     operatorsAliases: false,
   });
