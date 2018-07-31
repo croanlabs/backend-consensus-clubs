@@ -70,3 +70,18 @@ spec:
             secretKeyRef:
               name: node-secrets
               key: postgresPass
+        - name: EOS_CHAIN_ID
+          valueFrom:
+            secretKeyRef:
+              name: node-secrets
+              key: eosChainId
+        - name: EOS_EOSIO_PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: node-secrets
+              key: eosEosioPrivateKey
+        - name: EOS_EOSIO_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: node-secrets
+              key: eosEosioPublicKey
