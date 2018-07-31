@@ -11,7 +11,6 @@ function confEos() {
   // Environment variables are automatically available to discover each
   // service that was created before this pod (nodejs pod) was
   // instantiated.
-
   const eosConfig = {
     chainId: config.eosChainId,
     keyProvider: config.eosEosioPrivKey,
