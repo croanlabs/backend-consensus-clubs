@@ -20,6 +20,7 @@ passport.use(
         .then((user) => {
           done(null, user);
         }).catch((err) => {
+          console.log(err);
           done('Error creating new user', null);
         });
     },

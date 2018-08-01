@@ -1,5 +1,6 @@
 const config = require('../config');
 const eos = require('../config/eos');
+const db = require('../config/database');
 const User = require('../models/user');
 
 let exp = module.exports = {};
@@ -11,29 +12,36 @@ let exp = module.exports = {};
  */
 exp.findOrCreate = (username, externalInfo) => {
   return new Promise((resolve, reject) => {
-    User.findOrCreate({
-      where: {
-        username
-      },
-      defaults: {
-        externalInfo
-      },
-    }).spread((user, created) => {
-      if (created) {
-        eos.contract(config.eosUsername).then(contract => {
-          const options = { authorization: [`${config.eosUsername}@active`] };
-          contract.insertuser(username, '', '', 1000, options)
-          .then((res) => {
-            resolve(user);
+    db.transaction().then(function (t) {
+      User.findOrCreate({
+        where: {
+          username
+        },
+        defaults: {
+          externalInfo
+        },
+        transaction: t
+      }).spread((user, created) => {
+        if (created) {
+          eos.contract(config.eosUsername).then(contract => {
+            const options = { authorization: [`${config.eosUsername}@active`] };
+            contract.insertuser(username, '', '', 1000, options)
+            .then((res) => {
+              t.commit();
+              resolve(user);
+            }).catch((err) => {
+              t.rollback();
+              reject(err);
+            })
           }).catch((err) => {
+            t.rollback();
             reject(err);
-          })
-        }).catch((err) => {
-          reject(err);
-        })
-      } else {
-        resolve(user);
-      }
+          });
+        } else {
+          t.commit();
+          resolve(user);
+        };
+      });
     });
   });
-}
+};
