@@ -16,12 +16,12 @@ passport.use(
       callbackURL: config.twitterCallbackUrl,
     },
     (token, tokenSecret, profile, done) => {
-      console.log(`User connected! \n
-        Token: ${token} \n
-        Token Secret: ${tokenSecret}
-        Profile: ${JSON.stringify(profile)}`);
       userService.findOrCreate(profile.username, profile)
-        .then((user) => done(null, user))
+        .then((user) => {
+          done(null, user);
+        }).catch((err) => {
+          done('Error creating new user', null);
+        });
     },
   ),
 );

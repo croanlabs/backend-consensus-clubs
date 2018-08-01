@@ -33,55 +33,70 @@ spec:
         ports:
         - containerPort: 8080
         command: [ "/bin/bash", "-c", "--" ]
-        args: [ "node /app/index.js" ]
+        args: [ "npm run migrate && node /app/index.js" ]
         env:
         - name: TWITTER_CALLBACK_URL
           valueFrom:
             secretKeyRef:
-              name: node-secrets
+              name: api-secrets
               key: twitterCallbackUrl
         - name: TWITTER_CONSUMER_KEY
           valueFrom:
             secretKeyRef:
-              name: node-secrets
+              name: api-secrets
               key: twitterConsumerKey
         - name: TWITTER_CONSUMER_SECRET
           valueFrom:
             secretKeyRef:
-              name: node-secrets
+              name: api-secrets
               key: twitterConsumerSecret
         - name: SESSION_SECRET
           valueFrom:
             secretKeyRef:
-              name: node-secrets
+              name: api-secrets
               key: sessionSecret
         - name: POSTGRES_DB_NAME
           valueFrom:
             secretKeyRef:
-              name: node-secrets
+              name: api-secrets
               key: postgresDbName
         - name: POSTGRES_USER
           valueFrom:
             secretKeyRef:
-              name: node-secrets
+              name: api-secrets
               key: postgresUser
         - name: POSTGRES_PASS
           valueFrom:
             secretKeyRef:
-              name: node-secrets
+              name: api-secrets
               key: postgresPass
         - name: EOS_CHAIN_ID
           valueFrom:
             secretKeyRef:
-              name: node-secrets
+              name: api-secrets
               key: eosChainId
         - name: EOS_EOSIO_PRIVATE_KEY
           valueFrom:
             secretKeyRef:
-              name: node-secrets
+              name: api-secrets
               key: eosEosioPrivateKey
         - name: EOS_EOSIO_PUBLIC_KEY
           valueFrom:
             secretKeyRef:
-              name: node-secrets
+              name: api-secrets
               key: eosEosioPublicKey
+        - name: EOS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: eosUsername
+        - name: EOS_USER_PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: eosUserPrivateKey
+        - name: EOS_USER_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: eosUserPublicKey

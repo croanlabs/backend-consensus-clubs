@@ -1,4 +1,4 @@
-FROM eosio/eos-dev:v1.0.8
+FROM eosio/eos-dev:v1.1.0
 
 WORKDIR /root
 COPY setup.sh /root

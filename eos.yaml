@@ -32,7 +32,33 @@ spec:
         imagePullPolicy: IfNotPresent
         command: [ "/bin/bash", "-c", "--" ]
         args:
-          - ./setup.sh;
-            while true; do sleep 30; done;
+        - ./setup.sh;
+          while true; do sleep 30; done;
         ports:
-        - containerPort: 8888 
+        - containerPort: 8888
+        env:
+         - name: EOS_EOSIO_PRIVATE_KEY
+           valueFrom:
+             secretKeyRef:
+               name: eos-secrets
+               key: eosEosioPrivateKey
+         - name: EOS_EOSIO_PUBLIC_KEY
+           valueFrom:
+             secretKeyRef:
+               name: eos-secrets
+               key: eosEosioPublicKey
+         - name: EOS_USERNAME
+           valueFrom:
+             secretKeyRef:
+               name: eos-secrets
+               key: eosUsername
+         - name: EOS_USER_PRIVATE_KEY
+           valueFrom:
+             secretKeyRef:
+               name: eos-secrets
+               key: eosUserPrivateKey
+         - name: EOS_USER_PUBLIC_KEY
+           valueFrom:
+             secretKeyRef:
+               name: eos-secrets
+               key: eosUserPublicKey

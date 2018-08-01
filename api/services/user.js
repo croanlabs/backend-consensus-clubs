@@ -1,3 +1,4 @@
+const config = require('../config');
 const eos = require('../config/eos');
 const User = require('../models/user');
 
@@ -8,28 +9,31 @@ let exp = module.exports = {};
  * it inserts it and creates a user on the blockchain.
  *
  */
-exp.findOrCreate = (userName, externalInfo) => {
-  User.findOrCreate({
-    where: {
-      username: profile.username
-    },
-    defaults: {
-      externalInfo: profile
-    },
-  }).spread((user, created) => {
-    if (created) {
-      console.log("It's going to create a user on the blockchain");
-      eos.contract('user').then(user => {
-        user.insert(userName, null, null, 1000)
-        .then((res) => {
-          console.log(`User creation on the blockchain response: ${res}`);
+exp.findOrCreate = (username, externalInfo) => {
+  return new Promise((resolve, reject) => {
+    User.findOrCreate({
+      where: {
+        username
+      },
+      defaults: {
+        externalInfo
+      },
+    }).spread((user, created) => {
+      if (created) {
+        eos.contract(config.eosUsername).then(contract => {
+          const options = { authorization: [`${config.eosUsername}@active`] };
+          contract.insertuser(username, '', '', 1000, options)
+          .then((res) => {
+            resolve(user);
+          }).catch((err) => {
+            reject(err);
+          })
         }).catch((err) => {
-          console.log(`Error creating user: ${err}`)
+          reject(err);
         })
-      }).catch((err) => {
-        console.log(`Error setting contract user for user creation\n ${err}`);
-      })
-    }
-    return user;
+      } else {
+        resolve(user);
+      }
+    });
   });
 }
