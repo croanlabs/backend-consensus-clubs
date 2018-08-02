@@ -65,7 +65,7 @@ spec:
             secretKeyRef:
               name: api-secrets
               key: postgresUser
-        - name: POSTGRES_PASS
+        - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
               name: api-secrets
@@ -80,7 +80,7 @@ spec:
             secretKeyRef:
               name: api-secrets
               key: postgresTestsUser
-        - name: POSTGRES_TESTS_PASS
+        - name: POSTGRES_TESTS_PASSWORD
           valueFrom:
             secretKeyRef:
               name: api-secrets

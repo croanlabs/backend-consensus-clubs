@@ -12,14 +12,14 @@ config.postgresHost = process.env.POSTGRES_MASTER_SERVICE_HOST;
 config.postgresPort = process.env.POSTGRES_MASTER_SERVICE_PORT;
 config.postgresDbName = process.env.POSTGRES_DB_NAME;
 config.postgresUser = process.env.POSTGRES_USER;
-config.postgresPass = process.env.POSTGRES_PASS;
+config.postgresPass = process.env.POSTGRES_PASSWORD;
 
-// Postgres to run tests on it
+// Postgres tests
 config.postgresTestsHost = process.env.POSTGRES_TESTS_SERVICE_HOST;
 config.postgresTestsPort = process.env.POSTGRES_TESTS_SERVICE_PORT;
 config.postgresTestsDbName = process.env.POSTGRES_TESTS_DB_NAME;
 config.postgresTestsUser = process.env.POSTGRES_TESTS_USER;
-config.postgresTestsPass = process.env.POSTGRES_TESTS_PASS;
+config.postgresTestsPass = process.env.POSTGRES_TESTS_PASSWORD;
 
 // EOS
 config.eosHost = process.env.EOS_MASTER_SERVICE_HOST;
@@ -31,7 +31,7 @@ config.eosUsername = process.env.EOS_USERNAME;
 config.eosUserPrivKey = process.env.EOS_USER_PRIVATE_KEY;
 config.eosUserPubKey = process.env.EOS_USER_PUBLIC_KEY;
 
-// EOS test specific values
+// EOS tests
 config.eosTestsUsername = process.env.EOS_TESTS_USERNAME;
 config.eosTestsUserPrivateKey = process.env.EOS_TESTS_USER_PRIVATE_KEY;
 config.eosTestsUserPublicKey = process.env.EOS_TESTS_USER_PUBLIC_KEY;

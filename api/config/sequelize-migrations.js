@@ -1,8 +1,10 @@
+const config = require('./config');
+
 module.exports = {
-  username: process.env.POSTGRES_USER,
-  password: process.env.POSTGRES_PASS,
-  database: process.env.POSTGRES_DB_NAME,
-  host: process.env.POSTGRES_MASTER_SERVICE_HOST,
+  username: config.postgresUser,
+  password: config.postgresPass,
+  database: config.postgresDbName,
+  host: config.postgresHost,
   dialect: 'postgres',
   options: {
     operatorsAliases: false
