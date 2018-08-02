@@ -69,7 +69,22 @@ spec:
           valueFrom:
             secretKeyRef:
               name: api-secrets
-              key: postgresPass
+              key: postgresPassword
+        - name: POSTGRES_TESTS_DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: postgresTestsDbName
+        - name: POSTGRES_TESTS_USER
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: postgresTestsUser
+        - name: POSTGRES_TESTS_PASS
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: postgresTestsPassword
         - name: EOS_CHAIN_ID
           valueFrom:
             secretKeyRef:
@@ -100,3 +115,18 @@ spec:
             secretKeyRef:
               name: api-secrets
               key: eosUserPublicKey
+        - name: EOS_TESTS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: eosTestsUsername
+        - name: EOS_TESTS_USER_PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: eosTestsUserPrivateKey
+        - name: EOS_TESTS_USER_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: eosTestsUserPublicKey

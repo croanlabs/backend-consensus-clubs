@@ -4,8 +4,7 @@
   "description": "REST API of Consensus Clubs",
   "main": "index.js",
   "scripts": {
-    "pretest": "eslint --ignore-path .gitignore .",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha",
     "start": "node /app/index.js",
     "migrate": "node_modules/.bin/sequelize db:migrate"
   },
@@ -33,5 +32,7 @@
     "sequelize": "^4.38.0",
     "sequelize-cli": "^4.0.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "mocha": "^5.2.0"
+  }
 }

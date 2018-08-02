@@ -61,7 +61,5 @@ typings/
 .next
 
 # Kubernetes secrets
-secrets.yaml
-
-# Kubernetes postgres (only for local use)
-postgres.yaml
+config/api-secrets.yaml
+config/eos-secrets.yaml

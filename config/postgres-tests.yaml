@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-tests
+spec:
+  selector:
+    app: postgres-tests
+  type: ClusterIP 
+  ports:
+  - protocol: TCP
+    port: 5432
+    targetPort: 5432 
+---
+apiVersion: apps/v1 
+kind: Deployment
+metadata:
+  name: postgres-tests-deployment 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-tests
+  template:
+    metadata:
+      labels:
+        app: postgres-tests
+    spec:
+      containers:
+      - name: postgres-tests
+        image: postgres:10.4
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: postgresTestsDbName
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: postgresTestsUser
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: postgresTestsPassword
