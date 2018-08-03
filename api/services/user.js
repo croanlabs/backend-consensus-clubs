@@ -1,5 +1,5 @@
 const config = require('../config');
-const eos = require('../config/eos');
+const eos = require('../config/eos').eos;
 const db = require('../config/database');
 const User = require('../models/user');
 

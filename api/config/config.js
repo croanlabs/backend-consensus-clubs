@@ -32,8 +32,10 @@ config.eosUserPrivKey = process.env.EOS_USER_PRIVATE_KEY;
 config.eosUserPubKey = process.env.EOS_USER_PUBLIC_KEY;
 
 // EOS tests
+config.eosTestsHost = process.env.EOS_TESTS_SERVICE_HOST;
+config.eosTestsPort = process.env.EOS_TESTS_SERVICE_PORT;
 config.eosTestsUsername = process.env.EOS_TESTS_USERNAME;
-config.eosTestsUserPrivateKey = process.env.EOS_TESTS_USER_PRIVATE_KEY;
-config.eosTestsUserPublicKey = process.env.EOS_TESTS_USER_PUBLIC_KEY;
+config.eosTestsUserPrivKey = process.env.EOS_TESTS_USER_PRIVATE_KEY;
+config.eosTestsUserPubKey = process.env.EOS_TESTS_USER_PUBLIC_KEY;
 
 module.exports = config;
