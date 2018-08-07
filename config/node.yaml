@@ -33,7 +33,7 @@ spec:
         ports:
         - containerPort: 8080
         command: [ "/bin/bash", "-c", "--" ]
-        args: [ "npm run migrate && node /app/index.js" ]
+        args: [ "npm run migrate && npm run test && node /app/index.js" ]
         env:
         - name: NODE_ENV
           valueFrom:
