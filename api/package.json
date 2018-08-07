@@ -4,11 +4,10 @@
   "description": "REST API of Consensus Clubs",
   "main": "index.js",
   "scripts": {
-    "test": "mocha",
+    "test": "npm run migrate-tests && NODE_ENV=test mocha",
     "start": "node /app/index.js",
-    "migrate-master": "node_modules/.bin/sequelize db:migrate --config ./config/sequelize-migrations.js",
-    "migrate-tests": "node_modules/.bin/sequelize db:migrate --config ./config/sequelize-tests-migrations.js",
-    "migrate": "npm run migrate-master && npm run migrate-tests"
+    "migrate": "node_modules/.bin/sequelize db:migrate --config ./config/sequelize-migrations.js",
+    "migrate-tests": "NODE_ENV=test npm run migrate"
   },
   "repository": {
     "type": "git",

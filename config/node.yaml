@@ -35,6 +35,11 @@ spec:
         command: [ "/bin/bash", "-c", "--" ]
         args: [ "npm run migrate && node /app/index.js" ]
         env:
+        - name: NODE_ENV
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets
+              key: nodeEnv
         - name: TWITTER_CALLBACK_URL
           valueFrom:
             secretKeyRef:
