@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata: 
+  name: nodejs-master
+  labels: 
+    app: nodejs-master
+spec: 
+  ports:
+  - port: 31000
+    targetPort: 8080
+  selector:
+    app: nodejs
+  type: LoadBalancer

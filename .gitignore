@@ -61,5 +61,10 @@ typings/
 .next
 
 # Kubernetes secrets
-config/api-secrets.yaml
-config/eos-secrets.yaml
+config/secrets/
+config/eks-cluster/
+
+# Contracts build files
+*.wast
+*.wasm
+*.abi

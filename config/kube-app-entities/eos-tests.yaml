@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: eos-master
+  name: eos-tests
 spec:
   selector:
-    app: eos
+    app: eos-tests
   type: ClusterIP
   ports:
   - name: nodeos
@@ -15,20 +15,20 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: eos-deployment
+  name: eos-tests-deployment
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: eos
+      app: eos-tests
   template:
     metadata:
       labels:
-        app: eos
+        app: eos-tests
     spec:
       containers:
-      - name: eos 
-        image: consensusclubs/eos-dev:v1.0.0
+      - name: eos-tests
+        image: consensusclubs/blockchain-consensus-clubs:v1.0.0
         imagePullPolicy: IfNotPresent
         command: [ "/bin/bash", "-c", "--" ]
         args:
@@ -51,14 +51,14 @@ spec:
            valueFrom:
              secretKeyRef:
                name: eos-secrets
-               key: eosUsername
+               key: eosTestsUsername
          - name: EOS_USER_PRIVATE_KEY
            valueFrom:
              secretKeyRef:
                name: eos-secrets
-               key: eosUserPrivateKey
+               key: eosTestsUserPrivateKey
          - name: EOS_USER_PUBLIC_KEY
            valueFrom:
              secretKeyRef:
                name: eos-secrets
-               key: eosUserPublicKey
+               key: eosTestsUserPublicKey
