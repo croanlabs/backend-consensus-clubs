@@ -12,15 +12,15 @@ eval $(minikube docker-env)
 
 ## Usage
 ### Running the project
-Run the start script to execute the project:
+Run the start script to execute the project locally:
 ```bash
-./start.sh
+./start.sh development
 ```
 
 ### Clean restart
 Run the restart script to delete the Kubernetes pods, services and deployments, re-build the nodejs-based Docker image to include your code and create the aforementioned Kubernetes entities again:
 ```bash
-./restart.sh
+./restart.sh development
 ```
 
 ### Clean
