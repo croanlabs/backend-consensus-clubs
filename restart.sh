@@ -1,2 +1,2 @@
 ./clean.sh
-./start.sh
+./start.sh $1
