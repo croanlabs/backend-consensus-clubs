@@ -25,7 +25,7 @@ exp.findOrCreate = (username, externalInfo) => {
         if (created) {
           eos.contract(config.eosUsername).then(contract => {
             const options = { authorization: [`${config.eosUsername}@active`] };
-            contract.insertuser(username, '', '', 1000, options)
+            contract.newuser(username, '', '', 1000, options)
             .then((res) => {
               t.commit();
               resolve(user);
@@ -42,6 +42,8 @@ exp.findOrCreate = (username, externalInfo) => {
           resolve(user);
         };
       });
+    }).catch((err) => {
+      reject(err);
     });
   });
 };
