@@ -18,7 +18,7 @@ echo "Importing conclubs key..."
 cleos wallet import --private-key $EOS_USER_PRIVATE_KEY
 
 echo "Building and deploying contracts..."
-cd smart-contracts/user
-eosiocpp -o user.wast user.cpp
-eosiocpp -g user.abi user.cpp
+cd smart-contracts
+eosiocpp -o user.wast user.cpp && \
+eosiocpp -g user.abi user.cpp && \
 cleos set contract $EOS_USERNAME . user.wast user.abi

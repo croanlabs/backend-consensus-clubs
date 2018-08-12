@@ -11,7 +11,7 @@ class user_management : public eosio::contract {
       users(_self, _self) {}
 
     /// @abi action
-    void insertuser(std::string name, std::string description, std::string avatar_url, uint64_t unopinionated_merits) {
+    void newuser(std::string name, std::string description, std::string avatar_url, uint64_t unopinionated_merits) {
       users.emplace(_self, [&](auto& new_user) {
         new_user.id = users.available_primary_key();
         new_user.name = name;
@@ -37,4 +37,4 @@ class user_management : public eosio::contract {
     eosio::multi_index<N(users), user> users;
 };
 
-EOSIO_ABI(user_management, (insertuser))
+EOSIO_ABI(user_management, (newuser))
