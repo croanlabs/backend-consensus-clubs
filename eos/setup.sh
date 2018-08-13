@@ -19,6 +19,6 @@ cleos wallet import --private-key $EOS_USER_PRIVATE_KEY
 
 echo "Building and deploying contracts..."
 cd smart-contracts
-eosiocpp -o user.wast user.cpp && \
-eosiocpp -g user.abi user.cpp && \
-cleos set contract $EOS_USERNAME . user.wast user.abi
+eosiocpp -o consensus_clubs.wast consensus_clubs.cpp && \
+eosiocpp -g consensus_clubs.abi consensus_clubs.cpp && \
+cleos set contract $EOS_USERNAME . consensus_clubs.wast consensus_clubs.abi
