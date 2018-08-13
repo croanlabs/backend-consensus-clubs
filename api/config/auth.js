@@ -18,7 +18,11 @@ passport.use(
     (token, tokenSecret, profile, done) => {
       userService.findOrCreate(profile.username, profile)
         .then((user) => {
-          done(null, user);
+          if (user) {
+            done(null, user);
+          } else {
+            done('Error creating new user', null);
+          }
         }).catch((err) => {
           console.log(err);
           done('Error creating new user', null);

@@ -11,39 +11,45 @@ let exp = module.exports = {};
  *
  */
 exp.findOrCreate = (username, externalInfo) => {
-  return new Promise((resolve, reject) => {
-    db.transaction().then(function (t) {
-      User.findOrCreate({
-        where: {
-          username
-        },
-        defaults: {
-          externalInfo
-        },
-        transaction: t
-      }).spread((user, created) => {
-        if (created) {
-          eos.contract(config.eosUsername).then(contract => {
-            const options = { authorization: [`${config.eosUsername}@active`] };
-            contract.newuser(username, '', '', 1000, options)
-            .then((res) => {
-              t.commit();
-              resolve(user);
-            }).catch((err) => {
-              t.rollback();
-              reject(err);
-            })
-          }).catch((err) => {
-            t.rollback();
-            reject(err);
-          });
-        } else {
-          t.commit();
-          resolve(user);
-        };
-      });
+  console.log(externalInfo);
+  return db.transaction().then((tx) => {
+    return User.findOrCreate({
+      where: {
+        username
+      },
+      defaults: {
+        externalInfo
+      },
+      transaction: tx
+    }).then(async (result) => {
+      const [user, created] = result;
+      if (created) {
+        try {
+          await exp.createUserBlockchain(username, externalInfo);
+        } catch(err) {
+          console.log(err);
+          tx.rollback();
+          return null;
+        }
+      }
+      tx.commit();
+      return user;
     }).catch((err) => {
-      reject(err);
-    });
-  });
+      console.log(err);
+      tx.rollback();
+      return null;
+    })
+  })
 };
+
+/**
+ * Insert a user into the table users on the blockchain.
+ *
+ */
+exp.createUserBlockchain = (username, externalInfo) => {
+  return eos.contract(config.eosUsername)
+    .then(contract => {
+      const options = { authorization: [`${config.eosUsername}@active`] };
+      return contract.newuser(username, 1000, options)
+    });
+}
