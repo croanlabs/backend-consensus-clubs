@@ -3,6 +3,7 @@
 using namespace std;
 
 namespace conclubs {
+  // @abi table users i64
   struct user {
     uint64_t id;
     string name;
@@ -12,6 +13,7 @@ namespace conclubs {
     EOSLIB_SERIALIZE(user, (id)(name)(unopinionated_merits))
   };
 
+  // @abi table polls i64
   struct poll {
     uint64_t id;
     string question;
@@ -25,7 +27,8 @@ namespace conclubs {
     uint64_t user_id;
     uint32_t amount; 
   };
-      
+
+  // @abi table candidates i64
   struct candidate {
     uint64_t id;
     uint64_t poll_id;
@@ -44,6 +47,7 @@ namespace conclubs {
         (token_holders_confidence)(token_holders_no_confidence))
   };
 
+  // @abi table opinions i64
   struct opinion {
     uint64_t id;
     uint64_t user_id;
@@ -55,6 +59,7 @@ namespace conclubs {
     EOSLIB_SERIALIZE(opinion, (id)(user_id)(poll_candidate_id)(opinion_type)(commitment))
   };
 
+  // @abi table actions i64
   struct action {
     uint64_t id;
     uint64_t user_id;
