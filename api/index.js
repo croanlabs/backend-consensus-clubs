@@ -12,6 +12,7 @@ const app = express();
 // Configure middleware for logging and session managing.
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.json());
 app.use(
   session({
     secret: config.sessionSecret,

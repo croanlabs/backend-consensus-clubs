@@ -1,6 +1,6 @@
 const passport = require('../config/auth').passport;
 
-module.exports.set = function(app) {
+module.exports.set = (app) => {
   app.get(
     '/',
     (req, res) => {

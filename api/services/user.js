@@ -50,6 +50,6 @@ exp.createUserBlockchain = (username, externalInfo) => {
   return eos.contract(config.eosUsername)
     .then(contract => {
       const options = { authorization: [`${config.eosUsername}@active`] };
-      return contract.newuser(username, 1000, options)
+      return contract.newuser(username, 1000, options);
     });
 }
