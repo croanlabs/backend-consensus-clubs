@@ -3,6 +3,10 @@ const config = require('../config');
 
 let exp = module.exports = {};
 
+/**
+ * Get list of polls.
+ *
+ */
 exp.getPolls = () => {
   return eos.getTableRows(
     true,
@@ -19,6 +23,10 @@ exp.getPolls = () => {
     });
 }
 
+/**
+ * Get poll by id.
+ *
+ */
 exp.getPoll = (pollId) => {
   return eos.getTableRows(
     true,
@@ -39,6 +47,10 @@ exp.getPoll = (pollId) => {
     })
 }
 
+/**
+ * Insert a poll into the polls table on the blockchain.
+ *
+ */
 exp.createPoll = (question, description) => {
   return eos.contract(config.eosUsername)
     .then(contract => {
