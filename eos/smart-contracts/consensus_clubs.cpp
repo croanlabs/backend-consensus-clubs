@@ -1,8 +1,13 @@
 #include <eosiolib/eosio.hpp>
+#include <eosiolib/print.hpp>
 #include "consensus_clubs.hpp"
 
 using namespace std;
 
+/**
+ * Insert a new user into the users table.
+ *
+ */
 void consensus_clubs::newuser(string name, uint64_t unopinionated_merits) {
   users.emplace(_self, [&](auto& new_user) {
     new_user.id = users.available_primary_key();
@@ -11,6 +16,10 @@ void consensus_clubs::newuser(string name, uint64_t unopinionated_merits) {
   });
 }
 
+/**
+ * Insert a new poll into the polls table.
+ *
+ */
 void consensus_clubs::newpoll(string question, string description) {
   polls.emplace(_self, [&](auto& new_poll) {
     new_poll.id = polls.available_primary_key();
@@ -19,6 +28,10 @@ void consensus_clubs::newpoll(string question, string description) {
   });
 }
 
+/**
+ * Insert a new candidate into the candidates table.
+ *
+ */
 void consensus_clubs::newcandidate(
     uint64_t poll_id,
     string name,
@@ -41,6 +54,10 @@ void consensus_clubs::newcandidate(
       });
 }
 
+/**
+ * Insert a new opinion into the opinions table.
+ *
+ */
 void consensus_clubs::newopinion(
     uint64_t user_id,
     uint64_t poll_candidate_id, 
@@ -55,6 +72,10 @@ void consensus_clubs::newopinion(
   });
 }
 
+/**
+ * Insert a new user action into the actions table.
+ *
+ */
 void consensus_clubs::newaction(uint64_t user_id,
     uint64_t poll_candidate_id,
     string action_type,
