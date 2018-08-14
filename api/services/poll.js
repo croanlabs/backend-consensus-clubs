@@ -4,11 +4,39 @@ const config = require('../config');
 let exp = module.exports = {};
 
 exp.getPolls = () => {
-  return [];
+  return eos.getTableRows(
+    true,
+    config.eosUsername,
+    config.eosUsername,
+    'polls',
+    'primary_key',
+    0,
+    10,
+    10,
+    'i64',
+    1).then((result) => {
+      return result.rows;
+    });
 }
 
 exp.getPoll = (pollId) => {
-  return {};
+  return eos.getTableRows(
+    true,
+    config.eosUsername,
+    config.eosUsername,
+    'polls',
+    'primary_key',
+    pollId,
+    pollId + 1,
+    1,
+    'i64',
+    1).then((result) => {
+      if (result.rows.length) {
+        return result.rows[0];
+      } else {
+        return null;
+      }
+    })
 }
 
 exp.createPoll = (question, description) => {
