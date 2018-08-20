@@ -44,9 +44,56 @@ module.exports.set = (app) => {
         .then(() => {
           res.status(200).send();
         }).catch((err) => {
-          // TODO log
+          // TODO logger
           res.status(500).json({
             error: 'Error creating poll',
+          });
+        })
+    });
+
+
+  app.post(
+    '/polls/:pollId/add-candidate',
+    (req, res) => {
+      if (!(req.params.pollId &&
+          req.body.name &&
+          req.body.description &&
+          req.body.twitterUser)) {
+        res.status(500).send('Error: required parameter not set.');
+      }
+      pollService.addCandidate(
+        req.params.pollId,
+        req.body.name,
+        req.body.description,
+        req.body.twitterUser,
+      ).then(() => {
+          res.status(200).send();
+        }).catch((err) => {
+          // TODO logger
+          res.status(500).json({
+            error: 'Error creating candidate',
+          });
+        })
+    });
+
+  app.post(
+    '/polls/:pollId/user-add-candidate',
+    (req, res) => {
+      pollService.userAddCandidate(
+        req.user.username,
+        req.params.pollId,
+        req.body.name,
+        req.body.description,
+        req.body.twitterUser,
+        req.body.confidence,
+        req.body.amountMerits)
+        .then(() => {
+          res.status(200).send();
+        }).catch((err) => {
+          // TODO logger
+          console.log(err);
+          res.status(500).json({
+            error: 'Error creating candidate',
           });
         })
     });
