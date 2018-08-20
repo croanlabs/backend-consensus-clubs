@@ -38,8 +38,6 @@ namespace conclubs {
     double total_tokens_confidence;
     double total_tokens_no_confidence;
 
-    uint64_t primary_key() const { return id; };
-
     /**
      * Sell tokens to user.
      *
@@ -79,6 +77,9 @@ namespace conclubs {
     double token_price(double supply) {
       return supply * a_bonding_curve;
     }
+
+    uint64_t primary_key() const { return id; };
+    uint64_t get_poll_id() const { return poll_id; };
 
     EOSLIB_SERIALIZE(candidate,
         (id)(poll_id)(name)(description)(twitter_user)

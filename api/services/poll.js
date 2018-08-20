@@ -28,24 +28,40 @@ exp.getPolls = () => {
  *
  */
 exp.getPoll = (pollId) => {
-  return eos.getTableRows(
-    true,
-    config.eosUsername,
-    config.eosUsername,
-    'polls',
-    'primary_key',
-    pollId,
-    pollId + 1,
-    1,
-    'i64',
-    1).then((result) => {
-      if (result.rows.length) {
-        return result.rows[0];
-      } else {
-        return null;
-      }
+  return Promise.all([
+    eos.getTableRows(
+      true,
+      config.eosUsername,
+      config.eosUsername,
+      'polls',
+      'primary_key',
+      // lower bound
+      pollId,
+      // upper bound
+      pollId + 1,
+      // limit
+      1,
+      'i64',
+      1),
+    eos.getTableRows(
+      true,
+      config.eosUsername,
+      config.eosUsername,
+      'candidates',
+      'poll_id',
+      pollId,
+      pollId + 9,
+      10,
+      'i64',
+      1)
+  ]).then((res) => {
+      let poll = res[0].rows[0];
+      let candidates = res[1].rows;
+      poll.candidates = candidates;
+      return poll;
     })
-}
+};
+
 
 /**
  * Insert a poll into the polls table on the blockchain.
