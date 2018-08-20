@@ -48,18 +48,28 @@ exp.getPoll = (pollId) => {
       config.eosUsername,
       config.eosUsername,
       'candidates',
-      'poll_id',
       pollId,
-      pollId + 9,
+      '',
+      '',
       10,
       'i64',
-      1)
-  ]).then((res) => {
-      let poll = res[0].rows[0];
-      let candidates = res[1].rows;
-      poll.candidates = candidates;
-      return poll;
-    })
+      2)])
+  .then((res) => {
+    let pollRes = res[0];
+    let candidatesRes = res[1];
+    let poll;
+    if (pollRes.rows.length) {
+      poll = pollRes.rows[0];
+    } else {
+      return null;
+    }
+    // FIXME when query using secondary index is working
+    // this filter will not be necessary anymore. Meanwhile
+    // we fetch all the candidates and filter them here.
+    candidates = candidatesRes.rows.filter(c => c['poll_id'] == pollId);
+    poll.candidates = candidates;
+    return poll;
+  })
 };
 
 
