@@ -8,19 +8,45 @@ let exp = module.exports = {};
  *
  */
 exp.getPolls = () => {
-  return eos.getTableRows(
-    true,
-    config.eosUsername,
-    config.eosUsername,
-    'polls',
-    'primary_key',
-    0,
-    10,
-    10,
-    'i64',
-    1).then((result) => {
-      return result.rows;
-    });
+  return  Promise.all([
+    eos.getTableRows(
+      true,
+      config.eosUsername,
+      config.eosUsername,
+      'polls',
+      'primary_key',
+      0,
+      10,
+      10,
+      'i64',
+      1),
+    eos.getTableRows(
+      true,
+      config.eosUsername,
+      config.eosUsername,
+      'candidates',
+      '',
+      '',
+      '',
+      10,
+      'i64',
+      2)])
+  .then((res) => {
+    let pollRes = res[0];
+    let candidatesRes = res[1];
+    let polls;
+    if (pollRes.rows.length) {
+      polls = pollRes.rows;
+    } else {
+      return null;
+    }
+    polls.map((p) => {
+      p.candidates =
+        candidatesRes.rows.filter(c => c['poll_id'] == p.id);
+      return p;
+    })
+    return polls;
+  })
 }
 
 /**

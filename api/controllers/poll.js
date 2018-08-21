@@ -80,7 +80,8 @@ module.exports.set = (app) => {
     '/polls/:pollId/user-add-candidate',
     (req, res) => {
       pollService.userAddCandidate(
-        req.user.username,
+        // FIXME pass user id as first parameter.
+        0,
         req.params.pollId,
         req.body.name,
         req.body.description,
