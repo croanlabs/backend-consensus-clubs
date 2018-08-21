@@ -5,6 +5,8 @@ using namespace eosio;
 using namespace std;
 using namespace conclubs;
 
+const int ERROR = -1;
+
 class consensus_clubs : public eosio::contract {
   public:
     using contract::contract;
@@ -47,17 +49,6 @@ class consensus_clubs : public eosio::contract {
         vector<token_holder> token_holders_confidence,
         vector<token_holder> token_holders_no_confidence);
 
-    eosio::multi_index<N(users), user>::const_iterator
-      get_user_if_has_enough_merits(
-        uint64_t user_id,
-        uint64_t merits_amount);
-
-    void allocate_tokens(
-        uint64_t user_id,
-        uint64_t candidate_id,
-        bool confidence,
-        uint64_t commitment_merits);
-
     /// @abi action
     void newopinion(
         uint64_t user_id,
@@ -73,6 +64,27 @@ class consensus_clubs : public eosio::contract {
         double amount,
         string date);
 
+    eosio::multi_index<N(users), user>::const_iterator
+      get_user_if_has_enough_merits(
+        uint64_t user_id,
+        uint64_t merits_amount);
+
+    void allocate_tokens(
+        uint64_t user_id,
+        uint64_t candidate_id,
+        bool confidence,
+        uint64_t commitment_merits);
+
+    uint64_t insert_candidate(
+        uint64_t poll_id,
+        string name,
+        string description,
+        string twitter_user);
+
+    bool poll_id_exists(uint64_t poll_id);
+
+    bool candidate_exists(candidate c);
+
   private:
     eosio::multi_index<N(users), user> users;
     eosio::multi_index<N(polls), poll> polls;
@@ -86,5 +98,5 @@ class consensus_clubs : public eosio::contract {
     eosio::multi_index<N(actions), conclubs::action> actions;
 };
 
-EOSIO_ABI(consensus_clubs, (newuser)(newpoll)(newcandidate)(newopinion)
-    (newaction)(newcanduser)(newtoken))
+EOSIO_ABI(consensus_clubs, (newuser)(newpoll)(newcandidate)(newcanduser)
+    (newtoken)(newopinion)(newaction))

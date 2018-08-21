@@ -35,28 +35,16 @@ void consensus_clubs::newpoll(string question, string description) {
  * or to be executed by the admin as it does not imply staking any merits
  * on the new option.
  *
+ * If the candidate has to be created from a contract the function
+ * insert_candidate should be used instead.
+ *
  */
 void consensus_clubs::newcandidate(
     uint64_t poll_id,
     string name,
     string description,
     string twitter_user) {
-  const auto candidate_id = candidates.available_primary_key();
-  candidates.emplace(_self, [&](auto& new_candidate) {
-    new_candidate.id = candidate_id;
-    new_candidate.poll_id = poll_id;
-    new_candidate.name = name;
-    new_candidate.description = description;
-    new_candidate.twitter_user = twitter_user;
-    new_candidate.total_tokens_confidence = 0;
-    new_candidate.total_tokens_no_confidence = 0;
-  });
-  tokens.emplace(_self, [&](auto& new_token) {
-    new_token.id = tokens.available_primary_key();
-    new_token.candidate_id = candidate_id;
-    new_token.token_holders_confidence = {};
-    new_token.token_holders_no_confidence = {};
-  });
+  insert_candidate(poll_id, name, description, twitter_user);
 }
 
 /**
@@ -71,6 +59,7 @@ void consensus_clubs::newcanduser(
     string twitter_user,
     bool confidence,
     uint64_t commitment_merits) {
+
   // Check if the user has enough amount of available merits.
   auto itr_user =
     get_user_if_has_enough_merits(user_id, commitment_merits);
@@ -78,8 +67,42 @@ void consensus_clubs::newcanduser(
     return;
   }
 
-  // Calculate amount of tokens and insert candidate
-  // TODO check if the candidate already exists.
+  const uint64_t candidate_id = insert_candidate(
+      poll_id, name, description, twitter_user);
+  if (candidate_id == ERROR) {
+    return;
+  }
+
+  // Allocate new tokens
+  newopinion(user_id, candidate_id, confidence, commitment_merits);
+}
+
+/**
+ * Candidate insertion.
+ *
+ * As the function newcandidate cannot return values
+ * because it is an action of the contract, insert_candidate
+ * was added to create a candidate and return its id.
+ *
+ */
+uint64_t consensus_clubs::insert_candidate(
+    uint64_t poll_id,
+    string name,
+    string description,
+    string twitter_user) {
+
+  // If the poll does not exist or the candidate already exists
+  // the transaction is invalid
+  candidate c = {};
+  c.poll_id = poll_id;
+  c.name = name;
+  c.description = description;
+  c.twitter_user = twitter_user;
+  if (!poll_id_exists(poll_id) ||
+      candidate_exists(c)) {
+    return ERROR;
+  }
+
   const auto candidate_id = candidates.available_primary_key();
   candidates.emplace(_self, [&](auto& new_candidate) {
     new_candidate.id = candidate_id;
@@ -90,17 +113,44 @@ void consensus_clubs::newcanduser(
     new_candidate.total_tokens_confidence = 0;
     new_candidate.total_tokens_no_confidence = 0;
   });
-
-  // Initialize token for candidate
   tokens.emplace(_self, [&](auto& new_token) {
     new_token.id = tokens.available_primary_key();
     new_token.candidate_id = candidate_id;
     new_token.token_holders_confidence = {};
     new_token.token_holders_no_confidence = {};
   });
+  return candidate_id;
+}
 
-  // Allocate new tokens
-  newopinion(user_id, candidate_id, confidence, commitment_merits);
+/**
+ * Check if there is a poll with poll id equal to
+ * the one passed as parameter.
+ *
+ */
+bool consensus_clubs::poll_id_exists(uint64_t poll_id) {
+  auto itr = polls.find(poll_id);
+  if (itr == polls.end()) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Verify if candidate already exists.
+ *
+ */
+bool consensus_clubs::candidate_exists(candidate c) {
+  auto poll_id_index = candidates.get_index<N(poll_id)>();
+  auto itr_candidates = poll_id_index.find(c.poll_id);
+  while(itr_candidates != poll_id_index.end()) {
+    if ((*itr_candidates).name == c.name ||
+        (*itr_candidates).twitter_user == c.twitter_user) {
+      return true;
+    } else {
+      itr_candidates++;
+    }
+  }
+  return false;
 }
 
 /**
