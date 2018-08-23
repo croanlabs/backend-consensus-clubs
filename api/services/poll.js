@@ -61,12 +61,9 @@ exp.getPoll = (pollId) => {
       config.eosUsername,
       'polls',
       'primary_key',
-      // lower bound
-      pollId,
-      // upper bound
-      pollId + 1,
-      // limit
-      1,
+      pollId, // lower bound
+      pollId + 1, // upper bound
+      1, // limit
       'i64',
       1),
     eos.getTableRows(
@@ -158,6 +155,30 @@ exp.userAddCandidate = (
       twitterUser,
       isConfidence,
       amountMerits,
+      options);
+  });
+}
+
+/**
+ * User expresses an opinion about a poll candidate.
+ * Internally the user buys candidate's confidence or
+ * no-confidence tokens.
+ *
+ */
+exp.expressOpinion = (
+    userId,
+    candidateId,
+    confidence,
+    commitment_merits) => {
+  const isConfidence = (confidence === 'true') ? 1 : 0;
+  return eos.contract(config.eosUsername).then(contract => {
+    const options =
+      { authorization: [`${config.eosUsername}@active`] };
+    return contract.newopinion(
+      userId,
+      candidateId,
+      isConfidence,
+      commitment_merits,
       options);
   });
 }

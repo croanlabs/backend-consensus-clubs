@@ -82,7 +82,7 @@ class consensus_clubs : public eosio::contract {
         string twitter_user);
 
     bool poll_id_exists(uint64_t poll_id);
-
+    bool candidate_id_exists(uint64_t candidate_id);
     bool candidate_exists(candidate c);
 
   private:

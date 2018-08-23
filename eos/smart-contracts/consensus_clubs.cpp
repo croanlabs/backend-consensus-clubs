@@ -123,13 +123,26 @@ uint64_t consensus_clubs::insert_candidate(
 }
 
 /**
- * Check if there is a poll with poll id equal to
- * the one passed as parameter.
+ * Check if there is a poll with id equal to the one passed
+ * as parameter.
  *
  */
 bool consensus_clubs::poll_id_exists(uint64_t poll_id) {
   auto itr = polls.find(poll_id);
   if (itr == polls.end()) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Check if there is a candidate with id equal to the one
+ * passed as parameter.
+ *
+ */
+bool consensus_clubs::candidate_id_exists(uint64_t candidate_id) {
+  auto itr = candidates.find(candidate_id);
+  if (itr == candidates.end()) {
     return false;
   }
   return true;
@@ -247,6 +260,12 @@ void consensus_clubs::newopinion(
   if (user_itr == users.end()) {
     return;
   }
+
+  // Check if candidate exists
+  if (!candidate_id_exists(candidate_id)) {
+    return;
+  }
+
   users.modify(user_itr, _self, [&](auto& user) {
     user.unopinionated_merits -= commitment_merits;
   });

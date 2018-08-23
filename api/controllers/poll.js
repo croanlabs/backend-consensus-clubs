@@ -51,7 +51,6 @@ module.exports.set = (app) => {
         })
     });
 
-
   app.post(
     '/polls/:pollId/add-candidate',
     (req, res) => {
@@ -98,4 +97,25 @@ module.exports.set = (app) => {
           });
         })
     });
+
+  app.post(
+    '/polls/:pollId/candidates/:candidateId/express-opinion',
+    (req, res) => {
+      pollService.expressOpinion(
+        // FIXME pass user id as first parameter.
+        0,
+        req.params.candidateId,
+        req.body.confidence,
+        req.body.commitmentMerits)
+      .then(() => {
+        res.status(200).send();
+      }).catch((err) => {
+        // TODO logger
+        console.log(err);
+        res.status(500).json({
+          error: 'Error creating opinion',
+        });
+      })
+    }
+  )
 }
