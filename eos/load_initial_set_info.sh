@@ -1,5 +1,5 @@
 cleos push action $EOS_USERNAME newuser "[\"admin\", 9999999]" -p $EOS_USERNAME
-cleos push action $EOS_USERNAME newuser "[\"test\", 99999999]" -p $EOS_USERNAME
+cleos push action $EOS_USERNAME newuser "[\"test\", 9999999]" -p $EOS_USERNAME
 
 cleos push action $EOS_USERNAME newpoll  "[\"Who are the most insightful crypto investors?\", \"Best investor in crypto.\"]" -p $EOS_USERNAME
 cleos push action $EOS_USERNAME newcandidate "[0, \"Meltem Demirors\",\"<<Description>>\", \"@melt_dem\"]" -p $EOS_USERNAME

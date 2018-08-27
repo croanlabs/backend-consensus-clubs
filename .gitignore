@@ -68,3 +68,5 @@ config/eks-cluster/
 *.wast
 *.wasm
 *.abi
+
+.DS_Store
