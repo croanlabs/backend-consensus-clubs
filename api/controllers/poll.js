@@ -102,11 +102,12 @@ module.exports.set = (app) => {
   app.post(
     '/polls/:pollId/candidates/:candidateId/express-opinion',
     (req, res) => {
+      const isConfidence = (req.body.confidence == 'true');
       pollService.expressOpinion(
         // FIXME pass user id as first parameter.
         0,
         req.params.candidateId,
-        req.body.confidence,
+        isConfidence,
         req.body.commitmentMerits)
       .then(() => {
         res.status(200).send();

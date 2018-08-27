@@ -1,7 +1,9 @@
 const assert = require('assert');
-const pollService = require('../services/poll');
-const userService = require('../services/user');
 const eosService = require('../services/eos');
+const pollService = require('../services/poll');
+const tokenService = require('../services/token');
+const userService = require('../services/user');
+const utils = require('../utils');
 
 describe('services.poll', () => {
   it('Create a poll on the blockchain', done => {
@@ -22,7 +24,7 @@ describe('services.poll', () => {
       .then(poll => {
         if (
           poll &&
-          poll.question == 'Who is the best investor in crypto?' &&
+          poll.question == 'Who are the most insightful crypto investors?' &&
           poll.description == 'Best investor in crypto.'
         ) {
           assert(true, 'Poll was retrieved successfully ');
@@ -75,10 +77,9 @@ describe('services.poll', () => {
       .then(() => done());
   });
 
-  it('Create new poll candidate proposed by a user', async () => {
+  it('Create new poll candidate proposed by a user and verify that merits are consumed', async () => {
     const resUserBefore = await eosService.getRowById('users', 0);
     const userBefore = resUserBefore.rows[0];
-    console.log('userBefore', JSON.stringify(userBefore));
     let id = +new Date();
     await pollService.userAddCandidate(
       0, // User id
@@ -87,14 +88,51 @@ describe('services.poll', () => {
       'Test user candidate description',
       `@test_candidate${id}`,
       1, // confidence
-      200, // amount of merits
+      20, // amount of merits
     );
     const resUserAfter = await eosService.getRowById('users', 0);
     const userAfter = resUserAfter.rows[0];
-    console.log('userAfter', JSON.stringify(userAfter));
-    assert(
-      userAfter['unopinionated_merits'] ==
-        userBefore['unopinionated_merits'] - 200,
+    assert.equal(
+      userAfter['unopinionated_merits'],
+        userBefore['unopinionated_merits'] - 20,
+    );
+  });
+
+  it('User expresses opinion and merits are consumed', async () => {
+    const resUserBefore = await eosService.getRowById('users', 0);
+    const userBefore = resUserBefore.rows[0];
+    await pollService.expressOpinion(
+      0, // user id
+      0, // candidate id
+      true, // confidence
+      20, // amount of merits
+    );
+    const resUserAfter = await eosService.getRowById('users', 0);
+    const userAfter = resUserAfter.rows[0];
+    assert.equal(
+      userAfter['unopinionated_merits'],
+        userBefore['unopinionated_merits'] - 20,
+    );
+  });
+
+  it('User express opinion and tokens are generated', async () => {
+    const resCandidateBefore = await eosService.getRowById('candidates', 2);
+    const candidateBefore = resCandidateBefore.rows[0];
+    const tokenAmount = tokenService.meritsToTokens(
+      50,
+      candidateBefore['total_tokens_confidence'],
+    );
+    await pollService.expressOpinion(
+      0, // user id
+      2, // candidate id
+      true, // confidence
+      50, // amount of merits
+    );
+    const resCandidateAfter = await eosService.getRowById('candidates', 2);
+    const candidateAfter = resCandidateAfter.rows[0];
+    assert.equal(
+      Number(candidateAfter['total_tokens_confidence']),
+        Number(candidateBefore['total_tokens_confidence']) + tokenAmount,
     );
   });
 });

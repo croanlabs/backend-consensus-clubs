@@ -65,7 +65,8 @@ namespace conclubs {
      *
      */
     double merits_to_tokens(uint64_t merits, uint64_t supply) {
-      const double newSupply = sqrt((2 * merits + supply * token_price(supply)) / a_bonding_curve);
+      const double newSupply =
+        sqrt((2 * merits + supply * token_price(supply)) / a_bonding_curve);
       return newSupply - supply;
     }
 
