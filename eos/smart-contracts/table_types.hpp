@@ -45,8 +45,6 @@ namespace conclubs {
     double allocate_tokens_using_merits(
         uint64_t merits,
         bool confidence) {
-      // TODO be careful with the meaning of this amount of merits,
-      // had the user expressed an opinion about this same candidate before?
       double supply = confidence ?
         total_tokens_confidence : total_tokens_no_confidence;
       const double token_amount = merits_to_tokens(merits, supply);
@@ -67,7 +65,8 @@ namespace conclubs {
      *
      */
     double merits_to_tokens(uint64_t merits, uint64_t supply) {
-      return sqrt((2 * merits + supply * token_price(supply)) / a_bonding_curve);
+      const double newSupply = sqrt((2 * merits + supply * token_price(supply)) / a_bonding_curve);
+      return newSupply - supply;
     }
 
     /**
