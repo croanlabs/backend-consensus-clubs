@@ -22,3 +22,8 @@ cd smart-contracts
 eosiocpp -o consensus_clubs.wast consensus_clubs.cpp && \
 eosiocpp -g consensus_clubs.abi consensus_clubs.cpp && \
 cleos set contract $EOS_USERNAME . consensus_clubs.wast consensus_clubs.abi
+
+echo "Loading initial set of information"
+sleep 5
+cd /root
+./load_initial_set_info.sh
