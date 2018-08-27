@@ -6,6 +6,7 @@ module.exports.set = (app) => {
     (req, res) => {
       pollService.getPolls()
         .then((result) => {
+          result = result || []
           res.send(result);
         }).catch((err) => {
           // TODO logger
