@@ -5,11 +5,13 @@ const cookieParser = require('cookie-parser');
 const config = require('./config');
 const passport = require('./config/auth').passport;
 const controllers = require('./controllers');
+const cors = require('cors');
 
 // Create the express application.
 const app = express();
 
 // Configure middleware for logging and session managing.
+app.use(cors({credentials: true, origin: true}));
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
