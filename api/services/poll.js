@@ -1,100 +1,57 @@
 const eos = require('../config/eos');
+const eosService = require('./eos');
 const config = require('../config');
 
 let exp = (module.exports = {});
 
 /**
- * Get list of polls.
+ * Get list of polls with their candidates.
  *
  */
-exp.getPolls = () => {
-  return Promise.all([
-    eos.getTableRows(
-      true,
-      config.eosUsername,
-      config.eosUsername,
-      'polls',
-      'primary_key',
-      0,
-      10,
-      10,
-      'i64',
-      1,
-    ),
-    eos.getTableRows(
-      true,
-      config.eosUsername,
-      config.eosUsername,
-      'candidates',
-      '',
-      '',
-      '',
-      100,
-      'i64',
-      2,
-    ),
-  ]).then(res => {
-    let pollRes = res[0];
-    let candidatesRes = res[1];
-    let polls;
-    if (pollRes.rows.length) {
-      polls = pollRes.rows;
-    } else {
-      return null;
+exp.getPolls = async () => {
+  let pollRes = await eosService.getPagedResults('polls', 0);
+  let polls;
+  if (pollRes.rows.length) {
+    polls = pollRes.rows;
+  } else {
+    return null;
+  }
+  let candidatesPromises = [];
+  polls.forEach(p => {
+    candidatesPromises.push(exp.getPollCandidates(p.id));
+  });
+  return Promise.all(candidatesPromises).then(candidates => {
+    for (let i = 0; i < polls.length; i++) {
+      polls[i].candidates = candidates[i];
     }
-    polls.map(p => {
-      p.candidates = candidatesRes.rows.filter(c => c['poll_id'] == p.id);
-      return p;
-    });
     return polls;
   });
 };
 
 /**
- * Get poll by id.
+ * Get poll by id with its candidates.
  *
  */
 exp.getPoll = pollId => {
   return Promise.all([
-    eos.getTableRows(
-      true,
-      config.eosUsername,
-      config.eosUsername,
-      'polls',
-      'primary_key',
-      pollId, // lower bound
-      pollId + 1, // upper bound
-      1, // limit
-      'i64',
-      1,
-    ),
-    eos.getTableRows(
-      true,
-      config.eosUsername,
-      config.eosUsername,
-      'candidates',
-      pollId,
-      '',
-      '',
-      10,
-      'i64',
-      2,
-    ),
+    eosService.getRowById('polls', pollId),
+    exp.getPollCandidates(pollId),
   ]).then(res => {
-    let pollRes = res[0];
+    let poll = res[0];
     let candidatesRes = res[1];
-    let poll;
-    if (pollRes.rows.length) {
-      poll = pollRes.rows[0];
-    } else {
+    if (!poll) {
       return null;
     }
-    // FIXME when query using secondary index is working
-    // this filter will not be necessary anymore. Meanwhile
-    // we fetch all the candidates and filter them here.
-    candidates = candidatesRes.rows.filter(c => c['poll_id'] == pollId);
-    poll.candidates = candidates;
+    poll.candidates = candidatesRes;
     return poll;
+  });
+};
+
+exp.getPollCandidates = pollId => {
+  return eosService.getRowsUsingIndex('candidates', pollId, 2).then(res => {
+    // FIXME when query using secondary index is working properly
+    // this filter will not be necessary anymore.
+    return res.filter(c => c['poll_id'] == pollId);
   });
 };
 

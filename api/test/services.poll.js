@@ -78,8 +78,7 @@ describe('services.poll', () => {
   });
 
   it('Create new poll candidate proposed by a user and verify that merits are consumed', async () => {
-    const resUserBefore = await eosService.getRowById('users', 0);
-    const userBefore = resUserBefore.rows[0];
+    const userBefore = await eosService.getRowById('users', 0);
     let id = +new Date();
     await pollService.userAddCandidate(
       0, // User id
@@ -90,8 +89,7 @@ describe('services.poll', () => {
       1, // confidence
       20, // amount of merits
     );
-    const resUserAfter = await eosService.getRowById('users', 0);
-    const userAfter = resUserAfter.rows[0];
+    const userAfter = await eosService.getRowById('users', 0);
     assert.equal(
       userAfter['unopinionated_merits'],
         userBefore['unopinionated_merits'] - 20,
@@ -99,16 +97,14 @@ describe('services.poll', () => {
   });
 
   it('User expresses opinion and merits are consumed', async () => {
-    const resUserBefore = await eosService.getRowById('users', 0);
-    const userBefore = resUserBefore.rows[0];
+    const userBefore = await eosService.getRowById('users', 0);
     await pollService.expressOpinion(
       0, // user id
       0, // candidate id
       true, // confidence
       20, // amount of merits
     );
-    const resUserAfter = await eosService.getRowById('users', 0);
-    const userAfter = resUserAfter.rows[0];
+    const userAfter = await eosService.getRowById('users', 0);
     assert.equal(
       userAfter['unopinionated_merits'],
         userBefore['unopinionated_merits'] - 20,
@@ -116,8 +112,7 @@ describe('services.poll', () => {
   });
 
   it('User express opinion and tokens are generated', async () => {
-    const resCandidateBefore = await eosService.getRowById('candidates', 2);
-    const candidateBefore = resCandidateBefore.rows[0];
+    const candidateBefore = await eosService.getRowById('candidates', 2);
     const tokenAmount = tokenService.meritsToTokens(
       50,
       candidateBefore['total_tokens_confidence'],
@@ -128,8 +123,7 @@ describe('services.poll', () => {
       true, // confidence
       50, // amount of merits
     );
-    const resCandidateAfter = await eosService.getRowById('candidates', 2);
-    const candidateAfter = resCandidateAfter.rows[0];
+    const candidateAfter = await eosService.getRowById('candidates', 2);
     assert.equal(
       Number(candidateAfter['total_tokens_confidence']),
         Number(candidateBefore['total_tokens_confidence']) + tokenAmount,
