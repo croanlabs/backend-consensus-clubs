@@ -271,13 +271,18 @@ void consensus_clubs::newopinion(
   });
 
   // Create opinion
+  uint64_t opinion_id = opinions.available_primary_key();
   opinions.emplace(_self, [&](auto& new_opinion) {
-    new_opinion.id = opinions.available_primary_key();
+    new_opinion.id = opinion_id;
     new_opinion.user_id = user_id;
     new_opinion.candidate_id = candidate_id;
     new_opinion.confidence = confidence;
     new_opinion.commitment_merits = commitment_merits;
   });
+
+  // Create action
+  string action_type = confidence ? "CONFIDENCE" : "NO_CONFIDENCE";
+  newaction(user_id, candidate_id, action_type, commitment_merits);
 
   allocate_tokens(user_id, candidate_id, confidence, commitment_merits);
 }
@@ -289,14 +294,14 @@ void consensus_clubs::newopinion(
 void consensus_clubs::newaction(uint64_t user_id,
     uint64_t candidate_id,
     string action_type,
-    double amount,
-    string date) {
+    double amount_merits) {
+
   actions.emplace(_self, [&](auto& new_action) {
     new_action.id = actions.available_primary_key();
     new_action.user_id = user_id;
     new_action.candidate_id = candidate_id;
     new_action.action_type = action_type;
-    new_action.amount = amount;
-    new_action.date = date;
+    new_action.amount_merits = amount_merits;
+    new_action.date_time = now();
   });
 }

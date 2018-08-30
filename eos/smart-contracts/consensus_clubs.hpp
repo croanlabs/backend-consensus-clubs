@@ -61,8 +61,7 @@ class consensus_clubs : public eosio::contract {
         uint64_t user_id,
         uint64_t candidate_id,
         string action_type,
-        double amount,
-        string date);
+        double amount_merits);
 
     eosio::multi_index<N(users), user>::const_iterator
       get_user_if_has_enough_merits(

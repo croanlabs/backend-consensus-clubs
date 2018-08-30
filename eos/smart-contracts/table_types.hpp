@@ -148,10 +148,10 @@ namespace conclubs {
     uint64_t user_id;
     uint64_t candidate_id;
     string action_type;
-    double amount;
-    string date;
+    uint64_t amount_merits;
+    time date_time;
 
     uint64_t primary_key() const { return id; };
-    EOSLIB_SERIALIZE(action, (id)(user_id)(candidate_id)(action_type)(amount)(date))
+    EOSLIB_SERIALIZE(action, (id)(user_id)(candidate_id)(action_type)(amount_merits)(date_time))
   };
 }
