@@ -217,30 +217,36 @@ void consensus_clubs::allocate_tokens(
     bool confidence,
     uint64_t commitment_merits) {
 
-  // Update general token totals of the candidate
+  // Get candidate and determine supply to calculate token price.
   auto itr_candidate = candidates.find(candidate_id);
   auto edited_candidate = *itr_candidate;
-  auto token_amount =
-    edited_candidate.allocate_tokens_using_merits(
-        commitment_merits,
-        confidence);
+  auto supply = confidence ?
+    edited_candidate.total_tokens_confidence :
+    edited_candidate.total_tokens_no_confidence;
+
+  // Update token holders
+  auto tokens_cid_index = tokens.get_index<N(candidate_id)>();
+  auto itr_token = tokens_cid_index.find(candidate_id);
+  auto edited_token = *itr_token;
+  double token_amount = edited_token.allocate_tokens(
+      user_id,
+      commitment_merits,
+      confidence,
+      supply
+  );
+  tokens_cid_index.modify(itr_token, _self, [&](auto& t) {
+    t.token_holders_confidence =
+      edited_token.token_holders_confidence;
+    t.token_holders_no_confidence =
+      edited_token.token_holders_no_confidence;
+  });
+
+  edited_candidate.allocate_tokens(token_amount, confidence);
   candidates.modify(itr_candidate, _self, [&](auto& c) {
     c.total_tokens_confidence =
       edited_candidate.total_tokens_confidence;
     c.total_tokens_no_confidence =
       edited_candidate.total_tokens_no_confidence;
-  });
-
-  // Update candidate token holders
-  auto cid_index = tokens.get_index<N(candidate_id)>();
-  auto itr_token = cid_index.find(candidate_id);
-  auto transf_token = *itr_token;
-  transf_token.allocate_tokens(user_id, token_amount, confidence);
-  cid_index.modify(itr_token, _self, [&](auto& t) {
-    t.token_holders_confidence =
-      transf_token.token_holders_confidence;
-    t.token_holders_no_confidence =
-      transf_token.token_holders_no_confidence;
   });
 }
 
@@ -254,7 +260,7 @@ void consensus_clubs::newopinion(
     bool confidence,
     uint32_t commitment_merits) {
 
-  // Check and update user's data
+  // Check user's data
   auto user_itr = get_user_if_has_enough_merits(
       user_id, commitment_merits);
   if (user_itr == users.end()) {
@@ -304,4 +310,64 @@ void consensus_clubs::newaction(uint64_t user_id,
     new_action.amount_merits = amount_merits;
     new_action.date_time = now();
   });
+}
+
+/**
+ * Exchange a percentage of tokens.
+ *
+ */
+void consensus_clubs::redeem(
+    uint64_t user_id,
+    uint64_t candidate_id,
+    bool confidence,
+    double percentage) {
+  if (percentage > 100 || percentage <= 0) {
+    return;
+  }
+  auto itr_user = users.find(user_id);
+  if (itr_user == users.end()) {
+    return;
+  }
+
+  // Get candidate and determine supply to calculate token price.
+  auto itr_candidate = candidates.find(candidate_id);
+  auto edited_candidate = *itr_candidate;
+  double supply = confidence ?
+    edited_candidate.total_tokens_confidence :
+    edited_candidate.total_tokens_no_confidence;
+
+  // Update token holders
+  auto tokens_cid_index = tokens.get_index<N(candidate_id)>();
+  auto itr_token = tokens_cid_index.find(candidate_id);
+  auto edited_token = *itr_token;
+  exchange_result result = edited_token.free_tokens(
+      user_id,
+      percentage,
+      confidence,
+      supply
+  );
+  if (result.result_code == error) {
+    return;
+  }
+  tokens_cid_index.modify(itr_token, _self, [&](auto& t) {
+    t.token_holders_confidence =
+      edited_token.token_holders_confidence;
+    t.token_holders_no_confidence =
+      edited_token.token_holders_no_confidence;
+  });
+
+  // Update candidate
+  edited_candidate.free_tokens(result.token_amount, confidence);
+  candidates.modify(itr_candidate, _self, [&](auto& c) {
+    c.total_tokens_confidence =
+      edited_candidate.total_tokens_confidence;
+    c.total_tokens_no_confidence =
+      edited_candidate.total_tokens_no_confidence;
+  });
+
+  users.modify(itr_user, _self, [&](auto& user) {
+    user.unopinionated_merits += result.merits;
+  });
+
+  newaction(user_id, candidate_id, "REDEMPTION", result.merits);
 }

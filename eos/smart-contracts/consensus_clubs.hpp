@@ -63,6 +63,13 @@ class consensus_clubs : public eosio::contract {
         string action_type,
         double amount_merits);
 
+    ///@abi action
+    void redeem(
+        uint64_t user_id,
+        uint64_t candidate_id,
+        bool confidence,
+        double percentage);
+
     eosio::multi_index<N(users), user>::const_iterator
       get_user_if_has_enough_merits(
         uint64_t user_id,
@@ -98,4 +105,4 @@ class consensus_clubs : public eosio::contract {
 };
 
 EOSIO_ABI(consensus_clubs, (newuser)(newpoll)(newcandidate)(newcanduser)
-    (newtoken)(newopinion)(newaction))
+    (newtoken)(newopinion)(newaction)(redeem))

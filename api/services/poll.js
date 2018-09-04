@@ -123,7 +123,7 @@ exp.userAddCandidate = (
  * Internally the user buys candidate's confidence or no-confidence tokens.
  *
  */
-exp.expressOpinion = (userId, candidateId, confidence, commitment_merits) => {
+exp.expressOpinion = (userId, candidateId, confidence, commitmentMerits) => {
   const isConfidence = confidence == true ? 1 : 0;
   return eos.contract(config.eosUsername).then(contract => {
     const options = {authorization: [`${config.eosUsername}@active`]};
@@ -131,7 +131,25 @@ exp.expressOpinion = (userId, candidateId, confidence, commitment_merits) => {
       userId,
       candidateId,
       isConfidence,
-      commitment_merits,
+      commitmentMerits,
+      options,
+    );
+  });
+};
+
+/**
+ * Redeem benefits. Internally it exchanges tokens for merits.
+ *
+ */
+exp.redeem = (userId, candidateId, confidence, percentage) => {
+  const isConfidence = confidence == true ? 1 : 0;
+  return eos.contract(config.eosUsername).then(contract => {
+    const options = {authorization: [`${config.eosUsername}@active`]};
+    return contract.redeem(
+      userId,
+      candidateId,
+      isConfidence,
+      percentage,
       options,
     );
   });

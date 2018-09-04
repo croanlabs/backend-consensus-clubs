@@ -8,6 +8,9 @@ namespace conclubs {
   //    price(supply) = supply * a_bonding_curve
   const double a_bonding_curve = 0.25;
 
+  const int error = -1;
+  const int ok = 0;
+
   // @abi table users i64
   struct user {
     uint64_t id;
@@ -39,15 +42,12 @@ namespace conclubs {
     double total_tokens_no_confidence;
 
     /**
-     * Sell tokens to user.
+     * Update token totals: sell tokens to user.
      *
      */
-    double allocate_tokens_using_merits(
-        uint64_t merits,
+    double allocate_tokens(
+        double token_amount,
         bool confidence) {
-      double supply = confidence ?
-        total_tokens_confidence : total_tokens_no_confidence;
-      const double token_amount = merits_to_tokens(merits, supply);
       if (confidence) {
         total_tokens_confidence += token_amount;
       } else {
@@ -56,26 +56,23 @@ namespace conclubs {
       return token_amount;
     }
 
+    /**
+     * Update token totals: free tokens.
+     *
+     */
+    double free_tokens(
+        double token_amount,
+        bool confidence) {
+      if (confidence) {
+        total_tokens_confidence -= token_amount;
+      } else {
+        total_tokens_no_confidence -= token_amount;
+      }
+      return token_amount;
+    }
+
     double get_total_tokens() {
       return total_tokens_confidence + total_tokens_no_confidence;
-    }
-
-    /**
-     * Convert merits to tokens.
-     *
-     */
-    double merits_to_tokens(uint64_t merits, uint64_t supply) {
-      const double newSupply =
-        sqrt((2 * merits + supply * token_price(supply)) / a_bonding_curve);
-      return newSupply - supply;
-    }
-
-    /**
-     * Bonding curve function.
-     *
-     */
-    double token_price(double supply) {
-      return supply * a_bonding_curve;
     }
 
     uint64_t primary_key() const { return id; };
@@ -88,7 +85,13 @@ namespace conclubs {
 
   struct token_holder {
     uint64_t user_id;
-    double amount;
+    double token_amount;
+  };
+
+  struct exchange_result {
+    int result_code;
+    uint64_t merits;
+    double token_amount;
   };
 
   // @abi table tokens
@@ -102,13 +105,14 @@ namespace conclubs {
      * Allocate tokens for a user.
      *
      */
-    void allocate_tokens(
+    double allocate_tokens(
         uint64_t user_id,
-        double token_amount,
-        bool confidence) {
+        uint64_t commitment_merits,
+        bool confidence,
+        double supply) {
       auto &holders = confidence ?
         token_holders_confidence : token_holders_no_confidence;
-
+      auto token_amount = merits_to_tokens_buy(commitment_merits, supply);
       std::vector<token_holder>::iterator itr =
         find_if(holders.begin(), holders.end(),
           [&](const token_holder & holder) {
@@ -117,11 +121,84 @@ namespace conclubs {
       if (itr == holders.end()) {
         token_holder th = {};
         th.user_id = user_id;
-        th.amount = token_amount;
+        th.token_amount = token_amount;
         holders.push_back(th);
       } else {
-        itr->amount += token_amount;
+        itr->token_amount += token_amount;
       }
+      return token_amount;
+    }
+
+    /**
+     * User frees tokens and gets merits.
+     *
+     */
+    exchange_result free_tokens(
+        uint64_t user_id,
+        double percentage,
+        bool confidence,
+        double supply) {
+      auto &holders = confidence ?
+        token_holders_confidence : token_holders_no_confidence;
+      std::vector<token_holder>::iterator itr =
+        find_if(holders.begin(), holders.end(),
+          [&](const token_holder & holder) {
+            return (holder.user_id == user_id);
+          });
+      exchange_result exchange;
+      if (itr == holders.end()) {
+        exchange.result_code = error;
+        return exchange;
+      }
+      if (percentage == 100) {
+        exchange.token_amount = itr->token_amount;
+        holders.erase(itr);
+      } else {
+        exchange.token_amount = itr->token_amount * percentage / 100;
+        itr->token_amount -= exchange.token_amount;
+      }
+      exchange.merits = tokens_to_merits_redeem(exchange.token_amount, supply);
+      exchange.result_code = ok;
+      return exchange;
+    }
+
+    /**
+     * Convert merits to tokens.
+     *
+     */
+    double merits_to_tokens_buy(uint64_t merits, double supply) {
+      const double newSupply =
+        sqrt((2 * merits + supply * token_price(supply)) / a_bonding_curve);
+      return newSupply - supply;
+    }
+
+    /**
+     * Convert tokens to merits.
+     *
+     */
+    double tokens_to_merits_redeem(double token_amount, double supply) {
+      double supply_after = supply - token_amount;
+      return (supply * token_price(supply) - supply_after * token_price(supply_after)) / 2;
+    }
+
+    /**
+     * For a user that has already expressed an opinion about a candidate,
+     * get the number of tokens that have to be sold to get the redemption
+     * passed as parameter (in merits).
+     *
+     */
+    double merits_to_tokens_redeem(uint64_t merits, double supply) {
+      const double new_supply =
+        sqrt((supply * token_price(supply) - 2 * merits) / a_bonding_curve);
+      return supply - new_supply;
+    }
+
+    /**
+     * Bonding curve function.
+     *
+     */
+    double token_price(double supply) {
+      return supply * a_bonding_curve;
     }
 
     uint64_t primary_key() const { return id; };
