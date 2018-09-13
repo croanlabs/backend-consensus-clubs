@@ -14,10 +14,18 @@ passport.use(
       consumerKey: config.twitterConsumerKey,
       consumerSecret: config.twitterConsumerSecret,
       callbackURL: config.twitterCallbackUrl,
+      passReqToCallback: true,
     },
-    (token, tokenSecret, profile, done) => {
+    (req, token, tokenSecret, profile, done) => {
       userService.findOrCreate(profile.username, profile)
-        .then((user) => {
+        .then(async (result) => {
+          const [user, created] = result;
+          if (req.session.ref && created) {
+            await userService.newReferral(req.session.ref).catch(err => {
+              console.log(err);
+              // TODO logger
+            })
+          }
           if (user) {
             done(null, user);
           } else {

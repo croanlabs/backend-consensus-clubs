@@ -70,6 +70,9 @@ class consensus_clubs : public eosio::contract {
         bool confidence,
         double percentage);
 
+    ///@abi action
+    void newreferral(uint64_t referred_by);
+
     eosio::multi_index<N(users), user>::const_iterator
       get_user_if_has_enough_merits(
         uint64_t user_id,
@@ -105,4 +108,4 @@ class consensus_clubs : public eosio::contract {
 };
 
 EOSIO_ABI(consensus_clubs, (newuser)(newpoll)(newcandidate)(newcanduser)
-    (newtoken)(newopinion)(newaction)(redeem))
+    (newtoken)(newopinion)(newaction)(newreferral)(redeem))

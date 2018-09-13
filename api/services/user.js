@@ -11,7 +11,6 @@ let exp = (module.exports = {});
  *
  */
 exp.findOrCreate = (username, externalInfo) => {
-  console.log(externalInfo);
   return db.transaction().then(tx => {
     return User.findOrCreate({
       where: {
@@ -34,12 +33,12 @@ exp.findOrCreate = (username, externalInfo) => {
           }
         }
         tx.commit();
-        return user;
+        return result;
       })
       .catch(err => {
         console.log(err);
         tx.rollback();
-        return null;
+        return [null, false];
       });
   });
 };
@@ -54,3 +53,10 @@ exp.createUserBlockchain = (username, externalInfo) => {
     return contract.newuser(username, 1000, options);
   });
 };
+
+exp.newReferral = (referredBy) => {
+  return eos.contract(config.eosUsername).then(contract => {
+    const options = {authorization: [`${config.eosUsername}@active`]};
+    return contract.newreferral(referredBy, options);
+  });
+}

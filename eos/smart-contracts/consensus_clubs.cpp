@@ -371,3 +371,17 @@ void consensus_clubs::redeem(
 
   newaction(user_id, candidate_id, "REDEMPTION", result.merits);
 }
+
+/**
+ * Process a user referral.
+ *
+ */
+void consensus_clubs::newreferral(uint64_t referred_by) {
+  auto itr_user = users.find(referred_by);
+  if (itr_user == users.end()) {
+    return;
+  }
+  users.modify(itr_user, _self, [&](auto& user) {
+    user.unopinionated_merits += 500;
+  });
+}

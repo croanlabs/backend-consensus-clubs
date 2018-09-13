@@ -131,6 +131,7 @@ describe('services.poll', () => {
   });
 
   it('User emits an opinion and then redeems it. Unopinionated merits should remain the same', async () => {
+    await utils.sleep(500);
     // Clean all the previous opinions of the user on the target candidate.
     await pollService.redeem(
       0, // user id
@@ -145,6 +146,7 @@ describe('services.poll', () => {
       true, // confidence
       20, // number of merits
     );
+    await utils.sleep(500);
     await pollService.redeem(
       0, // user id
       0, // candidate id
@@ -159,7 +161,7 @@ describe('services.poll', () => {
   });
 
   it('User emits an opinion and then redeems it. Candidate tokens should remain the same', async () => {
-    utils.sleep(500);
+    await utils.sleep(500);
     // Clean all the previous opinions of the user on the target candidate.
     await pollService.redeem(
       0, // user id
@@ -174,6 +176,7 @@ describe('services.poll', () => {
       false, // confidence
       20, // number of merits
     );
+    await utils.sleep(500);
     await pollService.redeem(
       0, // user id
       0, // candidate id
