@@ -7,6 +7,9 @@ const sequelize = new Sequelize(config.postgresDbName, config.postgresUser,
     port: config.postgresPort,
     dialect: 'postgres',
     operatorsAliases: false,
+    define: {
+      timestamps: true
+    }
   });
 
 sequelize
