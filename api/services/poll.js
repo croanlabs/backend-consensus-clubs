@@ -2,7 +2,7 @@ const eos = require('../config/eos');
 const eosService = require('./eos');
 const config = require('../config');
 
-let exp = (module.exports = {});
+let exp = module.exports = {};
 
 /**
  * Get list of polls with their candidates.
