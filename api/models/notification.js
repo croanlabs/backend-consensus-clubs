@@ -1,7 +1,7 @@
 const db = require('../config/database');
 const Sequelize = require('sequelize');
 
-const User = db.define(
+let Notification = db.define(
   'Notification',
   {
     id: {
@@ -13,7 +13,17 @@ const User = db.define(
     createdAt: Sequelize.DATE,
     updatedAt: Sequelize.DATE,
   },
-  {},
+  {
+    classMethods: {
+      associate: models => {
+        models.GeneralNotification.belongsTo(this);
+        this.hasOne(models.GeneralNotification);
+
+        models.UserNotification.belongsTo(this);
+        this.hasOne(models.UserNotification);
+      },
+    },
+  },
 );
 
-module.exports = User;
+module.exports = Notification;

@@ -22,6 +22,7 @@ let GeneralNotification = db.define(
 
 GeneralNotification.associate = models => {
   GeneralNotification.belongsTo(models.Notification);
+  models.Notification.hasOne(GeneralNotification);
 };
 
 module.exports = GeneralNotification;

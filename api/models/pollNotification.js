@@ -26,6 +26,7 @@ let PollNotification = db.define(
 
 PollNotification.associate = models => {
   PollNotification.belongsTo(models.Notification);
+  models.Notification.hasOne(PollNotification);
 };
 
 module.exports = PollNotification;

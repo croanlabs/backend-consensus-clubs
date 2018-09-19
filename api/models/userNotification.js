@@ -20,11 +20,14 @@ let UserNotification = db.define(
     createdAt: Sequelize.DATE,
     updatedAt: Sequelize.DATE,
   },
-  {},
+  {
+    classMethods: {
+      associate: models => {
+        UserNotification.belongsTo(models.Notification);
+        models.Notification.hasOne(UserNotification);
+      },
+    },
+  },
 );
-
-UserNotification.associate = models => {
-  UserNotification.belongsTo(models.Notification);
-};
 
 module.exports = UserNotification;

@@ -1,5 +1,6 @@
 const auth = require('./auth');
 const poll = require('./poll');
+const notification = require('./notification');
 
 /**
  * Set routes for all controllers.
@@ -8,4 +9,5 @@ const poll = require('./poll');
 module.exports.set = (app) => {
   auth.set(app);
   poll.set(app);
+  notification.set(app);
 }
