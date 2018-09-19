@@ -1,33 +1,34 @@
-const db = require('../config/database');
-const Sequelize = require('sequelize');
-
-let UserNotification = db.define(
-  'UserNotification',
-  {
-    id: {
-      type: Sequelize.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-    },
-    notificationId: {
-      type: Sequelize.INTEGER,
-      references: {
-        model: 'Notifications',
-        referencesKey: 'id',
+module.exports = (sequelize, DataTypes) => {
+  let UserNotification = sequelize.define(
+    'UserNotification',
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
       },
-    },
-    userId: Sequelize.INTEGER,
-    createdAt: Sequelize.DATE,
-    updatedAt: Sequelize.DATE,
-  },
-  {
-    classMethods: {
-      associate: models => {
-        UserNotification.belongsTo(models.Notification);
-        models.Notification.hasOne(UserNotification);
+      notificationId: {
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'Notifications',
+          referencesKey: 'id',
+        },
       },
+      userId: DataTypes.INTEGER,
+      createdAt: DataTypes.DATE,
+      updatedAt: DataTypes.DATE,
     },
-  },
-);
+    {},
+  );
 
-module.exports = UserNotification;
+  UserNotification.associate = models => {
+    UserNotification.belongsTo(models.Notification, {
+      foreignKey: 'notificationId',
+    });
+    models.Notification.hasOne(UserNotification, {
+      foreignKey: 'notificationId',
+    });
+  };
+
+  return UserNotification;
+};

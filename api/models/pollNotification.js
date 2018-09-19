@@ -1,32 +1,35 @@
-const db = require('../config/database');
-const Sequelize = require('sequelize');
-
-let PollNotification = db.define(
-  'PollNotification',
-  {
-    id: {
-      type: Sequelize.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-    },
-    notificationId: {
-      type: Sequelize.INTEGER,
-      references: {
-        model: 'Notifications',
-        referencesKey: 'id',
+module.exports = (sequelize, DataTypes) => {
+  let PollNotification = sequelize.define(
+    'PollNotification',
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
       },
+      notificationId: {
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'Notifications',
+          referencesKey: 'id',
+        },
+      },
+      pollId: DataTypes.INTEGER,
+      candidateId: DataTypes.INTEGER,
+      createdAt: DataTypes.DATE,
+      updatedAt: DataTypes.DATE,
     },
-    pollId: Sequelize.INTEGER,
-    candidateId: Sequelize.INTEGER,
-    createdAt: Sequelize.DATE,
-    updatedAt: Sequelize.DATE,
-  },
-  {},
-);
+    {},
+  );
 
-PollNotification.associate = models => {
-  PollNotification.belongsTo(models.Notification);
-  models.Notification.hasOne(PollNotification);
+  PollNotification.associate = models => {
+    PollNotification.belongsTo(models.Notification, {
+      foreignKey: 'notificationId',
+    });
+    models.Notification.hasOne(PollNotification, {
+      foreignKey: 'notificationId',
+    });
+  };
+
+  return PollNotification;
 };
-
-module.exports = PollNotification;

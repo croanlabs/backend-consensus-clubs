@@ -1,8 +1,9 @@
 const config = require('../config');
-const Notification = require('../models/notification');
-const GeneralNotification = require('../models/generalNotification');
-const PollNotification = require('../models/pollNotification');
-const UserNotification = require('../models/userNotification');
+const db = require('../config/database');
+const Notification = db.Notification;
+const UserNotification = db.UserNotification;
+const GeneralNotification = db.GeneralNotification;
+const PollNotification = db.PollNotification;
 
 let exp = (module.exports = {});
 

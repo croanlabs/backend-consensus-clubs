@@ -1,9 +1,10 @@
 const assert = require('assert');
-const Notification = require('../models/notification');
-const GeneralNotification = require('../models/generalNotification');
-const PollNotification = require('../models/pollNotification');
-const UserNotification = require('../models/userNotification');
 const notificationService = require('../services/notification');
+const db = require('../config/database');
+const Notification = db.Notification;
+const UserNotification = db.UserNotification;
+const GeneralNotification = db.GeneralNotification;
+const PollNotification = db.PollNotification;
 
 describe('services.notification', () => {
   it('General notification process inserts a row into table Notifications', async () => {

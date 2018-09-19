@@ -1,7 +1,7 @@
 const config = require('../config');
 const eos = require('../config/eos');
-const db = require('../config/database');
-const User = require('../models/user');
+const sequelize = require('../config/database').sequelize;
+const User = require('../config/database').User;
 
 let exp = (module.exports = {});
 
@@ -11,7 +11,7 @@ let exp = (module.exports = {});
  *
  */
 exp.findOrCreate = (username, externalInfo) => {
-  return db.transaction().then(tx => {
+  return sequelize.transaction().then(tx => {
     return User.findOrCreate({
       where: {
         username,

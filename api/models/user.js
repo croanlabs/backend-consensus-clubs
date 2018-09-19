@@ -1,20 +1,18 @@
-const db = require('../config/database');
-const Sequelize = require('sequelize');
-
-const User = db.define(
-  'User',
-  {
-    id: {
-      type: Sequelize.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
+module.exports = (sequelize, DataTypes) => {
+  let User = sequelize.define(
+    'User',
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      username: DataTypes.STRING,
+      externalInfo: DataTypes.JSON,
+      createdAt: DataTypes.DATE,
+      updatedAt: DataTypes.DATE,
     },
-    username: Sequelize.STRING,
-    externalInfo: Sequelize.JSON,
-    createdAt: Sequelize.DATE,
-    updatedAt: Sequelize.DATE,
-  },
-  {},
-);
-
-module.exports = User;
+    {},
+  );
+  return User;
+}

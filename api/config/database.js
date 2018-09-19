@@ -1,5 +1,6 @@
 const Sequelize = require('sequelize');
 const config = require('./config');
+const models = require('../models');
 
 const sequelize = new Sequelize(config.postgresDbName, config.postgresUser,
   config.postgresPass, {
@@ -21,4 +22,8 @@ sequelize
     console.error('Unable to connect to the database:', err);
   });
 
-module.exports = sequelize;
+// Load and get all the models and their associations
+let db = models.setAndGet(sequelize);
+db.sequelize = sequelize;
+
+module.exports = db;
