@@ -94,6 +94,11 @@ namespace conclubs {
     double token_amount;
   };
 
+  /**
+   * The tokens table stores token holders information for each candidate.
+   * Each row contains the tokens info for one candidate.
+   *
+   */
   // @abi table tokens
   struct token {
     uint64_t id;
@@ -207,6 +212,14 @@ namespace conclubs {
         (token_holders_confidence)(token_holders_no_confidence))
   };
 
+  /**
+   * On the opinions table the live opinion of users is maintained.
+   *
+   * If a user expresses more than one opinion on a candidate the existing
+   * opinion is updated. For a complete registry of all users' opinions and
+   * redemptions check the 'actions' table.
+   *
+   */
   // @abi table opinions i64
   struct opinion {
     uint64_t id;
@@ -216,9 +229,16 @@ namespace conclubs {
     uint32_t commitment_merits;
 
     uint64_t primary_key() const { return id; };
+    uint64_t get_user_id() const { return user_id; };
     EOSLIB_SERIALIZE(opinion, (id)(user_id)(candidate_id)(confidence)(commitment_merits))
   };
 
+  /**
+   * All users' actions on the system related to opinion expression and token
+   * redemption are inserted into this table. Each action generates a new row
+   * and rows should not be updated.
+   *
+   */
   // @abi table actions i64
   struct action {
     uint64_t id;

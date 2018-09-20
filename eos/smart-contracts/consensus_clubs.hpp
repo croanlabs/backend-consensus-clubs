@@ -103,7 +103,9 @@ class consensus_clubs : public eosio::contract {
     eosio::multi_index<N(tokens), token,
       indexed_by<N(candidate_id), const_mem_fun<token, uint64_t,
         &token::get_candidate_id>>> tokens;
-    eosio::multi_index<N(opinions), opinion> opinions;
+    eosio::multi_index<N(opinions), opinion,
+      indexed_by<N(user_id), const_mem_fun<opinion, uint64_t,
+        &opinion::get_user_id>>> opinions;
     eosio::multi_index<N(actions), conclubs::action> actions;
 };
 

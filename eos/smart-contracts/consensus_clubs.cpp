@@ -207,7 +207,7 @@ eosio::multi_index<N(users), user>::const_iterator consensus_clubs::
 /**
  * Allocate tokens.
  *
- * Users give their opinion about poll candidates and that is processed
+ * Users give their opinions about poll candidates and that is processed
  * as buying candidate's confidence or no-confidence tokens.
  *
  */
@@ -251,7 +251,11 @@ void consensus_clubs::allocate_tokens(
 }
 
 /**
- * Insert a new opinion into the opinions table.
+ * User expresses a new opinion on a candidate.
+ *
+ * This method is going to insert a new row into the opinions
+ * table if the user had not expressed an opinion before or
+ * update an existing one if the user had done so.
  *
  */
 void consensus_clubs::newopinion(
@@ -313,7 +317,7 @@ void consensus_clubs::newaction(uint64_t user_id,
 }
 
 /**
- * Exchange a percentage of tokens.
+ * Redemption of a percentage of user's tokens in  exchange for merits.
  *
  */
 void consensus_clubs::redeem(
