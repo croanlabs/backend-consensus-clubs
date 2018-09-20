@@ -50,8 +50,23 @@ exp.notifyUser = async (text, userId) => {
 /**
  * Get notifications for a user.
  *
+ * The filters parameter can have the following filters:
+ *  - polls:
+ *      Array of poll ids.
+ *  - candidates:
+ *      Array of candidate ids.
+ *  - offset:
+ *      Offset of notifications for pagination.
+ *  - limit
+ *      Max number of notifications to get. Max is 10.
  */
-exp.getNotifications = async userId => {
+exp.getNotifications = async (userId, filters = {}) => {
+  if (!filters.offset || filters.offset < 0) {
+    filters.offset = 0;
+  }
+  if (!filters.limit || filters.limit < 0 || filters.limit > 10) {
+    filters.limit = 10;
+  }
   return Notification.findAll({
     order: [['createdAt', 'DESC']],
     include: [
@@ -60,6 +75,18 @@ exp.getNotifications = async userId => {
         required: false,
         where: {userId},
       },
+      {
+        model: GeneralNotification,
+        required: false,
+        //where: {userId},
+      },
+      {
+        model: PollNotification,
+        required: false,
+        //where: {userId},
+      },
     ],
+    offset: filters.offset,
+    limit: filters.limit
   });
 };
