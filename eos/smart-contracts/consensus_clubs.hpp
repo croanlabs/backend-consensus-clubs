@@ -5,8 +5,6 @@ using namespace eosio;
 using namespace std;
 using namespace conclubs;
 
-const int ERROR = -1;
-
 class consensus_clubs : public eosio::contract {
   public:
     using contract::contract;
@@ -19,6 +17,11 @@ class consensus_clubs : public eosio::contract {
       tokens(_self, _self),
       opinions(_self, _self),
       actions(_self, _self) {}
+
+    auto get_opinion_user_candidate(
+          uint64_t user_id,
+          uint64_t candidate_id,
+          bool confidence);
 
     /// @abi action
     void newuser(string name, uint64_t unopinionated_merits);
@@ -90,23 +93,35 @@ class consensus_clubs : public eosio::contract {
         string description,
         string twitter_user);
 
+    uint64_t create_or_update_opinion(
+        uint64_t user_id,
+        uint64_t candidate_id,
+        bool confidence,
+        uint32_t commitment_merits);
+
+    uint64_t update_opinion_related_to_redemption(
+        uint64_t user_id,
+        uint64_t candidate_id,
+        bool confidence,
+        uint32_t redeemed_merits);
+
     bool poll_id_exists(uint64_t poll_id);
     bool candidate_id_exists(uint64_t candidate_id);
     bool candidate_exists(candidate c);
 
   private:
-    eosio::multi_index<N(users), user> users;
-    eosio::multi_index<N(polls), poll> polls;
-    eosio::multi_index<N(candidates), candidate,
+    multi_index<N(users), user> users;
+    multi_index<N(polls), poll> polls;
+    multi_index<N(candidates), candidate,
       indexed_by<N(poll_id), const_mem_fun<candidate, uint64_t,
         &candidate::get_poll_id>>> candidates;
-    eosio::multi_index<N(tokens), token,
+    multi_index<N(tokens), token,
       indexed_by<N(candidate_id), const_mem_fun<token, uint64_t,
         &token::get_candidate_id>>> tokens;
-    eosio::multi_index<N(opinions), opinion,
+    multi_index<N(opinions), opinion,
       indexed_by<N(user_id), const_mem_fun<opinion, uint64_t,
         &opinion::get_user_id>>> opinions;
-    eosio::multi_index<N(actions), conclubs::action> actions;
+    multi_index<N(actions), conclubs::action> actions;
 };
 
 EOSIO_ABI(consensus_clubs, (newuser)(newpoll)(newcandidate)(newcanduser)

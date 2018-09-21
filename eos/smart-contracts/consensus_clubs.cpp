@@ -69,7 +69,7 @@ void consensus_clubs::newcanduser(
 
   const uint64_t candidate_id = insert_candidate(
       poll_id, name, description, twitter_user);
-  if (candidate_id == ERROR) {
+  if (candidate_id == error) {
     return;
   }
 
@@ -100,7 +100,7 @@ uint64_t consensus_clubs::insert_candidate(
   c.twitter_user = twitter_user;
   if (!poll_id_exists(poll_id) ||
       candidate_exists(c)) {
-    return ERROR;
+    return error;
   }
 
   const auto candidate_id = candidates.available_primary_key();
@@ -251,6 +251,36 @@ void consensus_clubs::allocate_tokens(
 }
 
 /**
+ * Get the opinion about a candidate expressed by a user.
+ *
+ * Return the user_id index iterator pointing to the opinion
+ * in case it was found, otherwise return the end iterator for the table.
+ *
+ */
+  auto consensus_clubs::get_opinion_user_candidate(
+      uint64_t user_id,
+      uint64_t candidate_id,
+      bool confidence) {
+  // Get all opinions expressed by the user
+  auto opinions_uid_index = opinions.get_index<N(user_id)>();
+  auto itr_opinions = opinions_uid_index.find(user_id);
+  if (itr_opinions == opinions_uid_index.end()) {
+    return itr_opinions;
+  }
+
+  // Search for opinion related to the target candidate
+  while (itr_opinions != opinions_uid_index.end()) {
+    if ((*itr_opinions).candidate_id == candidate_id &&
+        (*itr_opinions).confidence == confidence) {
+      return itr_opinions;
+    } else {
+      itr_opinions++;
+    }
+  }
+  return opinions_uid_index.end();
+}
+
+/**
  * User expresses a new opinion on a candidate.
  *
  * This method is going to insert a new row into the opinions
@@ -263,24 +293,53 @@ void consensus_clubs::newopinion(
     uint64_t candidate_id,
     bool confidence,
     uint32_t commitment_merits) {
-
-  // Check user's data
   auto user_itr = get_user_if_has_enough_merits(
       user_id, commitment_merits);
   if (user_itr == users.end()) {
     return;
   }
-
-  // Check if candidate exists
   if (!candidate_id_exists(candidate_id)) {
     return;
   }
-
   users.modify(user_itr, _self, [&](auto& user) {
     user.unopinionated_merits -= commitment_merits;
   });
 
-  // Create opinion
+  // Create or update opinion row on table opinions
+  create_or_update_opinion(user_id, candidate_id, confidence, commitment_merits);
+
+  string action_type = confidence ? "CONFIDENCE" : "NO_CONFIDENCE";
+  newaction(user_id, candidate_id, action_type, commitment_merits);
+
+  allocate_tokens(user_id, candidate_id, confidence, commitment_merits);
+}
+
+/**
+ * Update or create a row on the opinions table after user expresses
+ * an opinion.
+ *
+ * Return the id of the created/updated row.
+ *
+ * Note: For opinion update related to token redemption instead of opinion
+ * expressio see the method update_opinion_related_to_redemption.
+ */
+uint64_t consensus_clubs::create_or_update_opinion(
+    uint64_t user_id,
+    uint64_t candidate_id,
+    bool confidence,
+    uint32_t commitment_merits) {
+  auto opinions_uid_index = opinions.get_index<N(user_id)>();
+  auto itr_opinions = get_opinion_user_candidate(user_id, candidate_id, confidence);
+
+  // Opinion found: update it
+  if (itr_opinions != opinions_uid_index.end()) {
+    opinions_uid_index.modify(itr_opinions, _self, [&](auto& op) {
+        op.commitment_merits += commitment_merits;
+    });
+    return (*itr_opinions).id;
+  }
+
+  // Opinion not found: create it
   uint64_t opinion_id = opinions.available_primary_key();
   opinions.emplace(_self, [&](auto& new_opinion) {
     new_opinion.id = opinion_id;
@@ -289,12 +348,35 @@ void consensus_clubs::newopinion(
     new_opinion.confidence = confidence;
     new_opinion.commitment_merits = commitment_merits;
   });
+  return opinion_id;
+}
 
-  // Create action
-  string action_type = confidence ? "CONFIDENCE" : "NO_CONFIDENCE";
-  newaction(user_id, candidate_id, action_type, commitment_merits);
-
-  allocate_tokens(user_id, candidate_id, confidence, commitment_merits);
+/**
+ * Update or delete an existent opinion on the opinions table due to
+ * a token redemption process executed by the user.
+ *
+ * If the user redeems all the tokens related to the candidate
+ * (so that opinion.commitment_merits = 0) the opinion is removed
+ * from the table.
+ */
+uint64_t consensus_clubs::update_opinion_related_to_redemption(
+    uint64_t user_id,
+    uint64_t candidate_id,
+    bool confidence,
+    uint32_t redeemed_merits) {
+  auto opinions_uid_index = opinions.get_index<N(user_id)>();
+  auto itr_opinions = get_opinion_user_candidate(user_id, candidate_id, confidence);
+  if (itr_opinions == opinions_uid_index.end()) {
+    return error;
+  }
+  if ((*itr_opinions).commitment_merits <= redeemed_merits) {
+    opinions_uid_index.erase(itr_opinions);
+  } else {
+    opinions_uid_index.modify(itr_opinions, _self, [&](auto& o) {
+        o.commitment_merits -= redeemed_merits;
+    });
+  }
+  return ok;
 }
 
 /**
@@ -373,6 +455,11 @@ void consensus_clubs::redeem(
     user.unopinionated_merits += result.merits;
   });
 
+  update_opinion_related_to_redemption(
+    user_id,
+    candidate_id,
+    confidence,
+    result.merits);
   newaction(user_id, candidate_id, "REDEMPTION", result.merits);
 }
 
