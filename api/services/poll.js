@@ -74,6 +74,10 @@ exp.createPoll = (question, description) => {
  * of polls or to be used by the admin as it does not imply staking
  * any coins on the new option.
  *
+ * Effects on the blockchain:
+ *  - Insert candidate into candidates table
+ *  - Insert token for the new candidate into tokens table
+ *
  */
 exp.addCandidate = (pollId, name, description, twitterUser) => {
   return eos.contract(config.eosUsername).then(contract => {
@@ -92,6 +96,14 @@ exp.addCandidate = (pollId, name, description, twitterUser) => {
  * Insert a candidate added by a user to the candidates table on
  * the blockchain.
  *
+ * Effects on the blockchain:
+ *  - Insert candidate into candidates table adding the new tokens
+ *    for the user that proposes the candidate
+ *  - Insert token for the new candidate into tokens table
+ *  - Update the number of unopinionated merits the user has
+ *  - Insert opinion into opinions table
+ *  - Insert action into actions table
+ *
  */
 exp.userAddCandidate = (
   userId,
@@ -100,7 +112,7 @@ exp.userAddCandidate = (
   description,
   twitterUser,
   confidence,
-  amountMerits,
+  commitmentMerits,
 ) => {
   const isConfidence = confidence === 'true' ? 1 : 0;
   return eos.contract(config.eosUsername).then(contract => {
@@ -112,7 +124,7 @@ exp.userAddCandidate = (
       description,
       twitterUser,
       isConfidence,
-      amountMerits,
+      commitmentMerits,
       options,
     );
   });
@@ -121,6 +133,13 @@ exp.userAddCandidate = (
 /**
  * User expresses an opinion about a poll candidate.
  * Internally the user buys candidate's confidence or no-confidence tokens.
+ *
+ * Effects on the blockchain:
+ *  - Update token holders for the candidate on table tokens
+ *  - Update the token totals on the candidates table
+ *  - Update the number of unopinionated merits the user has
+ *  - Create/update opinion on the opinions table
+ *  - Insert action into actions table
  *
  */
 exp.expressOpinion = (userId, candidateId, confidence, commitmentMerits) => {
@@ -139,6 +158,13 @@ exp.expressOpinion = (userId, candidateId, confidence, commitmentMerits) => {
 
 /**
  * Redeem benefits. Internally it exchanges tokens for merits.
+ *
+ * Effects on the blockchain:
+ *  - Update token holders for the candidate on table tokens
+ *  - Update the token totals on the candidates table
+ *  - Update the number of unopinionated merits the user has
+ *  - Update/delete opinion on the opinions table
+ *  - Add action to actions table
  *
  */
 exp.redeem = (userId, candidateId, confidence, percentage) => {
