@@ -57,18 +57,21 @@ exp.getRowsUsingIndex = (tableName, id, indexId) => {
  * Get paged results ordered by primary key.
  *
  */
-exp.getPagedResults = (tableName, idFrom, page = 1, pageSize = 10) => {
+exp.getPagedResults = (tableName, idFrom, options = {}) => {
+  options.page = options.page || 1;
+  options.pageSize = options.pageSize || 10;
+  options.indexId = options.indexId || 1;
   return eos
     .getTableRows(
       true,
       config.eosUsername,
       config.eosUsername,
       tableName,
-      'primary_key',
-      idFrom + (page - 1) * pageSize,
+      '',
+      idFrom + (options.page - 1) * options.pageSize,
       -1,
-      pageSize,
+      options.pageSize,
       'i64',
-      1,
+      options.indexId,
     );
 };
