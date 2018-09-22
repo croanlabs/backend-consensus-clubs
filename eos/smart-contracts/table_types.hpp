@@ -226,11 +226,11 @@ namespace conclubs {
     uint64_t user_id;
     uint64_t candidate_id;
     bool confidence;
-    uint32_t commitment_merits;
+    uint32_t token_amount;
 
     uint64_t primary_key() const { return id; };
     uint64_t get_user_id() const { return user_id; };
-    EOSLIB_SERIALIZE(opinion, (id)(user_id)(candidate_id)(confidence)(commitment_merits))
+    EOSLIB_SERIALIZE(opinion, (id)(user_id)(candidate_id)(confidence)(token_amount))
   };
 
   /**

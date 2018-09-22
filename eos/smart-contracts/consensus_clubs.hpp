@@ -81,7 +81,7 @@ class consensus_clubs : public eosio::contract {
         uint64_t user_id,
         uint64_t merits_amount);
 
-    void allocate_tokens(
+    double allocate_tokens(
         uint64_t user_id,
         uint64_t candidate_id,
         bool confidence,
@@ -97,13 +97,13 @@ class consensus_clubs : public eosio::contract {
         uint64_t user_id,
         uint64_t candidate_id,
         bool confidence,
-        uint32_t commitment_merits);
+        double token_amount);
 
     uint64_t update_opinion_related_to_redemption(
         uint64_t user_id,
         uint64_t candidate_id,
         bool confidence,
-        uint32_t redeemed_merits);
+        double token_amount);
 
     bool poll_id_exists(uint64_t poll_id);
     bool candidate_id_exists(uint64_t candidate_id);

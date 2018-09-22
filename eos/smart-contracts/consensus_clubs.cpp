@@ -211,7 +211,7 @@ eosio::multi_index<N(users), user>::const_iterator consensus_clubs::
  * as buying candidate's confidence or no-confidence tokens.
  *
  */
-void consensus_clubs::allocate_tokens(
+double consensus_clubs::allocate_tokens(
     uint64_t user_id,
     uint64_t candidate_id,
     bool confidence,
@@ -248,6 +248,8 @@ void consensus_clubs::allocate_tokens(
     c.total_tokens_no_confidence =
       edited_candidate.total_tokens_no_confidence;
   });
+
+  return token_amount;
 }
 
 /**
@@ -304,14 +306,14 @@ void consensus_clubs::newopinion(
   users.modify(user_itr, _self, [&](auto& user) {
     user.unopinionated_merits -= commitment_merits;
   });
-
-  // Create or update opinion row on table opinions
-  create_or_update_opinion(user_id, candidate_id, confidence, commitment_merits);
-
+  double token_amount = allocate_tokens(
+      user_id,
+      candidate_id,
+      confidence,
+      commitment_merits);
+  create_or_update_opinion(user_id, candidate_id, confidence, token_amount);
   string action_type = confidence ? "CONFIDENCE" : "NO_CONFIDENCE";
   newaction(user_id, candidate_id, action_type, commitment_merits);
-
-  allocate_tokens(user_id, candidate_id, confidence, commitment_merits);
 }
 
 /**
@@ -321,20 +323,20 @@ void consensus_clubs::newopinion(
  * Return the id of the created/updated row.
  *
  * Note: For opinion update related to token redemption instead of opinion
- * expressio see the method update_opinion_related_to_redemption.
+ * expression see the method update_opinion_related_to_redemption.
  */
 uint64_t consensus_clubs::create_or_update_opinion(
     uint64_t user_id,
     uint64_t candidate_id,
     bool confidence,
-    uint32_t commitment_merits) {
+    double token_amount) {
   auto opinions_uid_index = opinions.get_index<N(user_id)>();
   auto itr_opinions = get_opinion_user_candidate(user_id, candidate_id, confidence);
 
   // Opinion found: update it
   if (itr_opinions != opinions_uid_index.end()) {
     opinions_uid_index.modify(itr_opinions, _self, [&](auto& op) {
-        op.commitment_merits += commitment_merits;
+        op.token_amount += token_amount;
     });
     return (*itr_opinions).id;
   }
@@ -346,7 +348,7 @@ uint64_t consensus_clubs::create_or_update_opinion(
     new_opinion.user_id = user_id;
     new_opinion.candidate_id = candidate_id;
     new_opinion.confidence = confidence;
-    new_opinion.commitment_merits = commitment_merits;
+    new_opinion.token_amount = token_amount;
   });
   return opinion_id;
 }
@@ -356,24 +358,24 @@ uint64_t consensus_clubs::create_or_update_opinion(
  * a token redemption process executed by the user.
  *
  * If the user redeems all the tokens related to the candidate
- * (so that opinion.commitment_merits = 0) the opinion is removed
+ * (so that opinion.token_amount = 0) the opinion is removed
  * from the table.
  */
 uint64_t consensus_clubs::update_opinion_related_to_redemption(
     uint64_t user_id,
     uint64_t candidate_id,
     bool confidence,
-    uint32_t redeemed_merits) {
+    double token_amount) {
   auto opinions_uid_index = opinions.get_index<N(user_id)>();
   auto itr_opinions = get_opinion_user_candidate(user_id, candidate_id, confidence);
   if (itr_opinions == opinions_uid_index.end()) {
     return error;
   }
-  if ((*itr_opinions).commitment_merits <= redeemed_merits) {
+  if ((*itr_opinions).token_amount <= token_amount) {
     opinions_uid_index.erase(itr_opinions);
   } else {
     opinions_uid_index.modify(itr_opinions, _self, [&](auto& o) {
-        o.commitment_merits -= redeemed_merits;
+        o.token_amount -= token_amount;
     });
   }
   return ok;
@@ -454,12 +456,11 @@ void consensus_clubs::redeem(
   users.modify(itr_user, _self, [&](auto& user) {
     user.unopinionated_merits += result.merits;
   });
-
   update_opinion_related_to_redemption(
     user_id,
     candidate_id,
     confidence,
-    result.merits);
+    result.token_amount);
   newaction(user_id, candidate_id, "REDEMPTION", result.merits);
 }
 
