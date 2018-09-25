@@ -21,6 +21,10 @@ fi
 echo 'Creating secrets...'
 kubectl create -f config/secrets/environments/api-secrets-$ENVIRONMENT.yaml
 
+echo 'Creating configmap to set DNS server properly'
+# See https://github.com/kubernetes/minikube/issues/2027
+kubectl create -f config/kube-app-entities/configmap-dns.yaml
+
 # App components
 echo 'Creating app components...'
 kubectl create -f config/kube-app-entities/eos.yaml
