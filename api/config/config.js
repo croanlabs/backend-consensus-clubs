@@ -3,6 +3,9 @@ const config = {};
 
 config.sessionSecret = process.env.SESSION_SECRET;
 
+// Authentication
+config.authTokenSecret = process.env.AUTH_TOKEN_SECRET;
+
 // Twitter
 config.twitterCallbackUrl = process.env.TWITTER_CALLBACK_URL;
 config.twitterConsumerKey = process.env.TWITTER_CONSUMER_KEY;

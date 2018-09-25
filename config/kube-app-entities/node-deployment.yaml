@@ -21,6 +21,11 @@ spec:
         command: [ "/bin/bash", "-c", "--" ]
         args: [ "npm run migrate && node /app/index.js" ]
         env:
+        - name: AUTH_TOKEN_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: api-secrets-environment
+              key: authTokenSecret
         - name: NODE_ENV
           valueFrom:
             secretKeyRef:

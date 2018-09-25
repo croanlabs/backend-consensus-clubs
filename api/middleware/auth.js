@@ -1,3 +1,4 @@
+const config = require('../config');
 const expressJwt = require('express-jwt');
 const jwt = require('jsonwebtoken');
 
@@ -8,7 +9,7 @@ exp.createToken = auth => {
     {
       id: auth.id,
     },
-    'FIX_ME_THIS_IS_THE_KEY_CHANGE_ME',
+    config.authTokenSecret,
     {
       expiresIn: 60 * 120,
     },
@@ -26,7 +27,7 @@ exp.sendToken = (req, res) => {
 };
 
 exp.authenticate = expressJwt({
-  secret: 'FIX_ME_THIS_IS_THE_KEY_CHANGE_ME',
+  secret: config.authTokenSecret,
   requestProperty: 'auth',
   getToken: req => {
     if (req.headers['x-auth-token']) {

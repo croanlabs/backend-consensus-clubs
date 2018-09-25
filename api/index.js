@@ -1,5 +1,5 @@
-onst express = require('express');
-onst bodyParser = require('body-parser');
+const express = require('express');
+const bodyParser = require('body-parser');
 const config = require('./config');
 const passport = require('./config/auth').passport;
 const controllers = require('./controllers');
