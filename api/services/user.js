@@ -26,11 +26,11 @@ exp.findOrCreate = (username, externalInfo) => {
         const [user, created] = result;
         if (created) {
           try {
-            await exp.createUserBlockchain(username, externalInfo);
+            await exp.createUserBlockchain(username);
           } catch (err) {
             console.log(err);
             tx.rollback();
-            return null;
+            return [null, false];
           }
         }
         tx.commit();
@@ -48,7 +48,8 @@ exp.findOrCreate = (username, externalInfo) => {
  * Insert a user into the table users on the blockchain.
  *
  */
-exp.createUserBlockchain = (username, externalInfo) => {
+exp.createUserBlockchain = (username) => {
+  console.log(`User ${username} is going to be created on the blockchain`);
   return eos.contract(config.eosUsername).then(contract => {
     const options = {authorization: [`${config.eosUsername}@active`]};
     return contract.newuser(username, 1000, options);

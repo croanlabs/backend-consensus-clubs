@@ -1,15 +1,6 @@
 #!/bin/bash
 set -e
 
-echo 'Building Docker images...'
-docker build --no-cache -t consensusclubs/api-consensus-clubs:v1.0.1 api/
-docker build --no-cache -t consensusclubs/blockchain-consensus-clubs:v1.0.0 eos/
-
-# Create secrets
-echo 'Creating Kubernetes secrets...'
-kubectl create -f config/secrets/api-secrets.yaml
-kubectl create -f config/secrets/eos-secrets.yaml
-
 ENVIRONMENT=$1
 DEFAULT_ENVIRONMENT='development'
 if [ -z $ENVIRONMENT ]; then
@@ -18,6 +9,22 @@ if [ -z $ENVIRONMENT ]; then
 else
   echo 'Environment is' $ENVIRONMENT
 fi
+
+# Create secrets
+echo 'Creating Kubernetes secrets...'
+kubectl create -f config/secrets/api-secrets.yaml
+kubectl create -f config/secrets/eos-secrets.yaml
+
+# If it's production environment do not build the docker images because
+# they should have been pushed to dockerhub before.
+if [ "$ENVIRONMENT" != 'production' ]; then
+  echo 'Building Docker images...'
+  docker build --no-cache -t consensusclubs/api-consensus-clubs:v1.0.1 api/
+  docker build --no-cache -t consensusclubs/blockchain-consensus-clubs:v1.0.0 eos/
+else
+  echo 'ATTENTION: Ensure that updated docker images were pushed to DockerHub'
+fi
+
 echo 'Creating secrets...'
 kubectl create -f config/secrets/environments/api-secrets-$ENVIRONMENT.yaml
 

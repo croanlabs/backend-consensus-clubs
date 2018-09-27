@@ -29,7 +29,7 @@ spec:
       containers:
       - name: eos 
         image: consensusclubs/blockchain-consensus-clubs:v1.0.0
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         command: [ "/bin/bash", "-c", "--" ]
         args:
         - ./setup.sh;
