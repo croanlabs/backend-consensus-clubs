@@ -40,6 +40,8 @@ namespace conclubs {
     string twitter_user;
     double total_tokens_confidence;
     double total_tokens_no_confidence;
+    uint64_t total_merits_confidence;
+    uint64_t total_merits_no_confidence;
 
     /**
      * Update token totals: sell tokens to user.
@@ -47,11 +49,14 @@ namespace conclubs {
      */
     double allocate_tokens(
         double token_amount,
+        uint64_t commitment_merits,
         bool confidence) {
       if (confidence) {
         total_tokens_confidence += token_amount;
+        total_merits_confidence += commitment_merits;
       } else {
         total_tokens_no_confidence += token_amount;
+        total_merits_no_confidence += commitment_merits;
       }
       return token_amount;
     }
@@ -62,11 +67,14 @@ namespace conclubs {
      */
     double free_tokens(
         double token_amount,
+        uint64_t commitment_merits,
         bool confidence) {
       if (confidence) {
         total_tokens_confidence -= token_amount;
+        total_merits_confidence -= commitment_merits;
       } else {
         total_tokens_no_confidence -= token_amount;
+        total_merits_no_confidence -= commitment_merits;
       }
       return token_amount;
     }
@@ -80,7 +88,8 @@ namespace conclubs {
 
     EOSLIB_SERIALIZE(candidate,
         (id)(poll_id)(name)(description)(twitter_user)
-        (total_tokens_confidence)(total_tokens_no_confidence))
+        (total_tokens_confidence)(total_tokens_no_confidence)
+        (total_merits_confidence)(total_merits_no_confidence))
   };
 
   struct token_holder {

@@ -241,12 +241,16 @@ double consensus_clubs::allocate_tokens(
       edited_token.token_holders_no_confidence;
   });
 
-  edited_candidate.allocate_tokens(token_amount, confidence);
+  edited_candidate.allocate_tokens(token_amount, commitment_merits, confidence);
   candidates.modify(itr_candidate, _self, [&](auto& c) {
     c.total_tokens_confidence =
       edited_candidate.total_tokens_confidence;
     c.total_tokens_no_confidence =
       edited_candidate.total_tokens_no_confidence;
+    c.total_merits_confidence =
+      edited_candidate.total_merits_confidence;
+    c.total_merits_no_confidence =
+      edited_candidate.total_merits_no_confidence;
   });
 
   return token_amount;
@@ -445,7 +449,7 @@ void consensus_clubs::redeem(
   });
 
   // Update candidate
-  edited_candidate.free_tokens(result.token_amount, confidence);
+  edited_candidate.free_tokens(result.token_amount, result.merits, confidence);
   candidates.modify(itr_candidate, _self, [&](auto& c) {
     c.total_tokens_confidence =
       edited_candidate.total_tokens_confidence;

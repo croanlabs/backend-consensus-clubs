@@ -15,7 +15,7 @@ spec:
       containers:
       - name: nodejs
         image: consensusclubs/api-consensus-clubs:v1.0.1
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
         command: [ "/bin/bash", "-c", "--" ]
