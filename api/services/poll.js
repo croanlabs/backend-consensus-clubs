@@ -114,7 +114,7 @@ exp.userAddCandidate = (
   confidence,
   commitmentMerits,
 ) => {
-  const isConfidence = confidence === 'true' ? 1 : 0;
+  const isConfidence = confidence === true ? 1 : 0;
   return eos.contract(config.eosUsername).then(contract => {
     const options = {authorization: [`${config.eosUsername}@active`]};
     return contract.newcanduser(
