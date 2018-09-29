@@ -5,7 +5,7 @@ const twitterClient = new Twit({
   consumer_key: config.twitterConsumerKey,
   consumer_secret: config.twitterConsumerSecret,
   access_token: config.twitterAccessToken,
-  access_token_secret: config.TwitterAccessTokenSecret
+  access_token_secret: config.twitterAccessTokenSecret
 });
 
 module.exports = twitterClient;
