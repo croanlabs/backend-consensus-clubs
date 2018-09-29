@@ -79,7 +79,7 @@ exp.createPoll = (question, description) => {
  *  - Insert token for the new candidate into tokens table
  *
  */
-exp.addCandidate = (pollId, name, description, twitterUser) => {
+exp.addCandidate = (pollId, name, description, twitterUser, profilePictureUrl) => {
   return eos.contract(config.eosUsername).then(contract => {
     const options = {authorization: [`${config.eosUsername}@active`]};
     return contract.newcandidate(
@@ -87,6 +87,7 @@ exp.addCandidate = (pollId, name, description, twitterUser) => {
       name,
       description,
       twitterUser,
+      profilePictureUrl,
       options,
     );
   });
@@ -111,6 +112,7 @@ exp.userAddCandidate = (
   name,
   description,
   twitterUser,
+  profilePictureUrl,
   confidence,
   commitmentMerits,
 ) => {
@@ -123,6 +125,7 @@ exp.userAddCandidate = (
       name,
       description,
       twitterUser,
+      profilePictureUrl,
       isConfidence,
       commitmentMerits,
       options,

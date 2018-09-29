@@ -38,6 +38,7 @@ namespace conclubs {
     string name;
     string description;
     string twitter_user;
+    string profile_picture_url;
     double total_tokens_confidence;
     double total_tokens_no_confidence;
     uint64_t total_merits_confidence;
@@ -87,7 +88,7 @@ namespace conclubs {
     uint64_t get_poll_id() const { return poll_id; };
 
     EOSLIB_SERIALIZE(candidate,
-        (id)(poll_id)(name)(description)(twitter_user)
+        (id)(poll_id)(name)(description)(twitter_user)(profile_picture_url)
         (total_tokens_confidence)(total_tokens_no_confidence)
         (total_merits_confidence)(total_merits_no_confidence))
   };

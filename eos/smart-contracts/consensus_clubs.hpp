@@ -34,7 +34,8 @@ class consensus_clubs : public eosio::contract {
         uint64_t poll_id,
         string name,
         string description,
-        string twitter_user);
+        string twitter_user,
+        string profile_picture_url);
 
     /// @abi action
     void newcanduser(
@@ -43,6 +44,7 @@ class consensus_clubs : public eosio::contract {
         string name,
         string description,
         string twitter_user,
+        string profile_picture_url,
         bool confidence,
         uint64_t commitment_merits);
 
@@ -91,7 +93,8 @@ class consensus_clubs : public eosio::contract {
         uint64_t poll_id,
         string name,
         string description,
-        string twitter_user);
+        string twitter_user,
+        string profile_picture_url);
 
     uint64_t create_or_update_opinion(
         uint64_t user_id,

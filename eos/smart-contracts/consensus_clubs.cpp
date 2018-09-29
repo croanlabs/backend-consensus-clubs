@@ -43,8 +43,9 @@ void consensus_clubs::newcandidate(
     uint64_t poll_id,
     string name,
     string description,
-    string twitter_user) {
-  insert_candidate(poll_id, name, description, twitter_user);
+    string twitter_user,
+    string profile_picture_url) {
+  insert_candidate(poll_id, name, description, twitter_user, profile_picture_url);
 }
 
 /**
@@ -57,6 +58,7 @@ void consensus_clubs::newcanduser(
     string name,
     string description,
     string twitter_user,
+    string profile_picture_url,
     bool confidence,
     uint64_t commitment_merits) {
 
@@ -68,7 +70,7 @@ void consensus_clubs::newcanduser(
   }
 
   const uint64_t candidate_id = insert_candidate(
-      poll_id, name, description, twitter_user);
+      poll_id, name, description, twitter_user, profile_picture_url);
   if (candidate_id == error) {
     return;
   }
@@ -89,7 +91,8 @@ uint64_t consensus_clubs::insert_candidate(
     uint64_t poll_id,
     string name,
     string description,
-    string twitter_user) {
+    string twitter_user,
+    string profile_picture_url) {
 
   // If the poll does not exist or the candidate already exists
   // the transaction is invalid
@@ -110,6 +113,7 @@ uint64_t consensus_clubs::insert_candidate(
     new_candidate.name = name;
     new_candidate.description = description;
     new_candidate.twitter_user = twitter_user;
+    new_candidate.profile_picture_url = profile_picture_url;
     new_candidate.total_tokens_confidence = 0;
     new_candidate.total_tokens_no_confidence = 0;
   });
