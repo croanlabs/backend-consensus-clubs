@@ -10,6 +10,8 @@ config.authTokenSecret = process.env.AUTH_TOKEN_SECRET;
 config.twitterCallbackUrl = process.env.TWITTER_CALLBACK_URL;
 config.twitterConsumerKey = process.env.TWITTER_CONSUMER_KEY;
 config.twitterConsumerSecret = process.env.TWITTER_CONSUMER_SECRET;
+config.twitterAccessToken = process.env.TWITTER_ACCESS_TOKEN;
+config.TwitterAccessTokenSecret = process.env.TWITTER_ACCESS_TOKEN_SECRET;
 
 // Postgres
 config.postgresHost = process.env.POSTGRES_MASTER_SERVICE_HOST;

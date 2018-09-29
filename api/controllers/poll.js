@@ -88,6 +88,7 @@ module.exports.set = app => {
         req.body.name,
         req.body.description,
         req.body.twitterUser,
+        req.body.profilePictureUrl,
         req.body.confidence,
         req.body.amountMerits,
       )
