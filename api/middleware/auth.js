@@ -26,6 +26,13 @@ exp.sendToken = (req, res) => {
   return res.status(200).send(JSON.stringify(req.user));
 };
 
+exp.moveTokenToPassportHeader = (req, res, next) => {
+  if (!req.headers['x-auth-token'] && req.cookies.token) {
+    req.headers['x-auth-token'] = req.cookies.token;
+  }
+  return next();
+};
+
 exp.authenticate = expressJwt({
   secret: config.authTokenSecret,
   requestProperty: 'auth',

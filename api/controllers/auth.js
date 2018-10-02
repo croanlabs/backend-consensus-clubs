@@ -23,7 +23,6 @@ module.exports.set = app => {
         },
       },
       (err, response, body) => {
-        console.log(body);
         if (err) {
           // TODO logger
           console.log(err);
@@ -31,7 +30,6 @@ module.exports.set = app => {
         }
         let editedBody = body.replace(/&/g, '", "').replace(/=/g, '": "');
         let jsonStr = `{"${editedBody}"}`;
-        console.log('loquelemanda: ', jsonStr);
         res.send(JSON.parse(jsonStr));
       },
     );

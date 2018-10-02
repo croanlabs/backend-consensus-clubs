@@ -29,7 +29,13 @@ passport.use(
           //  })
           //}
           if (user) {
-            done(null, user);
+            let userDes = {
+              id: user.id,
+              username: user.username,
+              name: user.externalInfo._json.name,
+              profileImageUrl: user.externalInfo._json.profile_image_url_https,
+            }
+            done(null, userDes);
           } else {
             done('Error creating new user', null);
           }
@@ -53,7 +59,13 @@ passport.use(
     defaults: {externalInfo: {}},
   })
     .spread((user, created) => {
-      done(null, user);
+      let userDes = {
+        id: user.id,
+        username: user.username,
+        name: user.externalInfo._json.name,
+        profileImageUrl: user.externalInfo._json.profile_image_url_https,
+      }
+      done(null, userDes);
     })
     .catch(() => console.log('Error deserializing object.'));
 });

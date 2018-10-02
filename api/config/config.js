@@ -3,6 +3,9 @@ const config = {};
 
 config.sessionSecret = process.env.SESSION_SECRET;
 
+// General app info
+config.siteUrl = process.env.SITE_URL;
+
 // Authentication
 config.authTokenSecret = process.env.AUTH_TOKEN_SECRET;
 
