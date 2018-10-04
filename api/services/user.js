@@ -1,6 +1,7 @@
 const config = require('../config');
 const eos = require('../config/eos');
 const eosService = require('./eos');
+const pollService = require('./poll');
 const sequelize = require('../config/database').sequelize;
 const User = require('../config/database').User;
 
@@ -49,7 +50,6 @@ exp.findOrCreate = (username, externalInfo) => {
  *
  */
 exp.createUserBlockchain = (username) => {
-  console.log(`User ${username} is going to be created on the blockchain`);
   return eos.contract(config.eosUsername).then(contract => {
     const options = {authorization: [`${config.eosUsername}@active`]};
     return contract.newuser(username, 1000, options);
@@ -74,13 +74,21 @@ exp.newReferral = (referredBy) => {
  * on the blockchain.
  *
  */
-exp.getUserOpinions = (userId, options = {}) => {
-  let userOpinions = eosService.getPagedResults('opinions', userId,
+exp.getUserOpinions = async (userId, options = {}) => {
+  let userOpinions = await eosService.getPagedResults('opinions', userId,
     {
       page: options.page || 1,
       pageSize: options.pageSize || 10,
-      index: 2 // userId index
+      indexId: 2 // userId index
     }
   );
+  let promises = userOpinions.rows.map(opinion => {
+    return eosService.getRowById('candidates', opinion['candidate_id'])
+      .then(candidate => {
+        opinion.candidate = candidate;
+        return opinion;
+      });
+  });
+  await Promise.all(promises);
   return userOpinions;
 }

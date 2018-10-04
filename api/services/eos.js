@@ -54,7 +54,7 @@ exp.getRowsUsingIndex = (tableName, id, indexId) => {
 };
 
 /**
- * Get paged results ordered by primary key.
+ * Get paged results from table.
  *
  */
 exp.getPagedResults = (tableName, idFrom, options = {}) => {

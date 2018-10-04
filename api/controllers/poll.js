@@ -1,4 +1,5 @@
 const pollService = require('../services/poll');
+const auth = require('../middleware/auth');
 
 module.exports.set = app => {
   app.get('/polls', (req, res) => {
@@ -51,6 +52,8 @@ module.exports.set = app => {
   });
 
   app.post('/polls/:pollId/add-candidate', (req, res) => {
+    // TODO enable this endpoint for the admin at some stage.
+    res.status(403).send();
     if (
       !(
         req.params.pollId &&
@@ -79,38 +82,48 @@ module.exports.set = app => {
       });
   });
 
-  app.post('/polls/:pollId/user-add-candidate', (req, res) => {
-    pollService
-      .userAddCandidate(
-        // FIXME pass user id as first parameter.
-        0,
-        req.params.pollId,
-        req.body.name,
-        req.body.description,
-        req.body.twitterUser,
-        req.body.profilePictureUrl,
-        req.body.confidence,
-        req.body.amountMerits,
-      )
-      .then(() => {
-        res.status(200).send();
-      })
-      .catch(err => {
-        // TODO logger
-        console.log(err);
-        res.status(500).json({
-          error: 'Error creating candidate',
+  app.post(
+    '/polls/:pollId/user-add-candidate',
+    auth.authenticate,
+    (req, res) => {
+      if (!req.auth) {
+        res.status(403).send();
+      }
+      // TODO specify minimum number of merits to stake.
+      pollService
+        .userAddCandidate(
+          req.auth.id,
+          req.params.pollId,
+          req.body.name,
+          req.body.description,
+          req.body.twitterUser,
+          req.body.profilePictureUrl,
+          req.body.confidence,
+          req.body.amountMerits,
+        )
+        .then(() => {
+          res.status(200).send();
+        })
+        .catch(err => {
+          // TODO logger
+          console.log(err);
+          res.status(500).json({
+            error: 'Error creating candidate',
+          });
         });
-      });
-  });
+    },
+  );
 
   app.post(
     '/polls/:pollId/candidates/:candidateId/express-opinion',
+    auth.authenticate,
     (req, res) => {
+      if (!req.auth) {
+        res.status(403).send();
+      }
       pollService
         .expressOpinion(
-          // FIXME pass user id as first parameter.
-          0,
+          req.auth.id,
           req.params.candidateId,
           req.body.confidence,
           req.body.commitmentMerits,
