@@ -14,8 +14,20 @@ module.exports = (sequelize, DataTypes) => {
           referencesKey: 'id',
         },
       },
-      pollId: DataTypes.INTEGER,
-      candidateId: DataTypes.INTEGER,
+      pollId: {
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'Polls',
+          referencesKey: 'id',
+        },
+      },
+      candidateId: {
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'Candidates',
+          referencesKey: 'id',
+        },
+      },
       createdAt: DataTypes.DATE,
       updatedAt: DataTypes.DATE,
     },

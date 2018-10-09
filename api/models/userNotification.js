@@ -14,7 +14,13 @@ module.exports = (sequelize, DataTypes) => {
           referencesKey: 'id',
         },
       },
-      userId: DataTypes.INTEGER,
+      userId: {
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'Users',
+          referencesKey: 'id',
+        },
+      },
       createdAt: DataTypes.DATE,
       updatedAt: DataTypes.DATE,
     },
