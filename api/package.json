@@ -21,7 +21,7 @@
       "git add"
     ],
     "*.{json}": [
-      "prettier --write",
+      "prettier --writee",
       "git add"
     ]
   },
