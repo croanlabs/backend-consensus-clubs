@@ -16,8 +16,12 @@
     }
   },
   "lint-staged": {
-    "*.{js,css,md}": [
+    "*.{js}": [
       "./node_modules/.bin/eslint --fix",
+      "git add"
+    ],
+    "*.{json}": [
+      "prettier --write",
       "git add"
     ]
   },
