@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  let UserNotification = sequelize.define(
+  const UserNotification = sequelize.define(
     'UserNotification',
     {
       id: {
@@ -27,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
     {},
   );
 
-  UserNotification.associate = models => {
+  UserNotification.associate = (models) => {
     UserNotification.belongsTo(models.Notification, {
       foreignKey: 'notificationId',
     });

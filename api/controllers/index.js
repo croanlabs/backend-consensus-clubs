@@ -12,4 +12,4 @@ module.exports.set = (app) => {
   notificationController.set(app);
   pollController.set(app);
   userController.set(app);
-}
+};

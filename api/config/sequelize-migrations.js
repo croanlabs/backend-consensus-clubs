@@ -7,6 +7,6 @@ module.exports = {
   host: config.postgresHost,
   dialect: 'postgres',
   options: {
-    operatorsAliases: false
-  }
+    operatorsAliases: false,
+  },
 };

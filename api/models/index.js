@@ -2,13 +2,11 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports.setAndGet = (sequelize) => {
-  let models = {};
+  const models = {};
   fs.readdirSync(__dirname)
-    .filter((file) => {
-      return (file.indexOf('.') !== 0) && (file !== 'index.js');
-    })
+    .filter(file => file.indexOf('.') !== 0 && file !== 'index.js')
     .forEach((file) => {
-      let model = sequelize.import(path.join(__dirname, file));
+      const model = sequelize.import(path.join(__dirname, file));
       models[model.name] = model;
     });
   Object.keys(models).forEach((modelName) => {
@@ -17,4 +15,4 @@ module.exports.setAndGet = (sequelize) => {
     }
   });
   return models;
-}
+};

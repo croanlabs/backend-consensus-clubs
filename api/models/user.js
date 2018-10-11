@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  let User = sequelize.define(
+  const User = sequelize.define(
     'User',
     {
       id: {
@@ -24,8 +24,8 @@ module.exports = (sequelize, DataTypes) => {
     });
     User.hasMany(models.Action, {
       as: 'actions',
-    })
+    });
   };
 
   return User;
-}
+};

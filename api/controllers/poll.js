@@ -1,15 +1,14 @@
 const pollService = require('../services/poll');
 const auth = require('../middleware/auth');
 
-module.exports.set = app => {
+module.exports.set = (app) => {
   app.get('/polls', (req, res) => {
     pollService
       .getPolls()
-      .then(result => {
-        result = result || [];
+      .then((result) => {
         res.send(result);
       })
-      .catch(err => {
+      .catch((err) => {
         // TODO logger
         console.log(err);
         res.status(500).json({
@@ -21,14 +20,14 @@ module.exports.set = app => {
   app.get('/polls/:pollId', (req, res) => {
     pollService
       .getPoll(req.params.pollId)
-      .then(poll => {
+      .then((poll) => {
         if (poll) {
           res.send(poll);
         } else {
           res.status(404).send();
         }
       })
-      .catch(err => {
+      .catch((err) => {
         // TODO logger
         console.log(err);
         res.status(500).json({
@@ -43,8 +42,9 @@ module.exports.set = app => {
       .then(() => {
         res.status(200).send();
       })
-      .catch(err => {
+      .catch((err) => {
         // TODO logger
+        console.log(err);
         res.status(500).json({
           error: 'Error creating poll',
         });
@@ -56,10 +56,10 @@ module.exports.set = app => {
     res.status(403).send();
     if (
       !(
-        req.params.pollId &&
-        req.body.name &&
-        req.body.description &&
-        req.body.twitterUser
+        req.params.pollId
+        && req.body.name
+        && req.body.description
+        && req.body.twitterUser
       )
     ) {
       res.status(500).send('Error: required parameter not set.');
@@ -74,8 +74,9 @@ module.exports.set = app => {
       .then(() => {
         res.status(200).send();
       })
-      .catch(err => {
+      .catch((err) => {
         // TODO logger
+        console.log(err);
         res.status(500).json({
           error: 'Error creating candidate',
         });
@@ -91,7 +92,7 @@ module.exports.set = app => {
       }
       // TODO specify minimum number of merits to stake.
       pollService
-        .userAddCandidate(
+        .addCandidate(
           req.auth.id,
           req.params.pollId,
           req.body.name,
@@ -104,7 +105,7 @@ module.exports.set = app => {
         .then(() => {
           res.status(200).send();
         })
-        .catch(err => {
+        .catch((err) => {
           // TODO logger
           console.log(err);
           res.status(500).json({
@@ -131,7 +132,7 @@ module.exports.set = app => {
         .then(() => {
           res.status(200).send();
         })
-        .catch(err => {
+        .catch((err) => {
           // TODO logger
           console.log(err);
           res.status(500).json({
@@ -153,7 +154,7 @@ module.exports.set = app => {
       .then(() => {
         res.status(200).send();
       })
-      .catch(err => {
+      .catch((err) => {
         // TODO logger
         console.log(err);
         res.status(500).json({

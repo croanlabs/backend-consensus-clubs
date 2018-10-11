@@ -1,10 +1,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
-const config = require('./config');
-const passport = require('./config/auth').passport;
-const controllers = require('./controllers');
 const cors = require('cors');
+const config = require('./config');
+const { passport } = require('./config/auth');
+const controllers = require('./controllers');
 const auth = require('./middleware/auth');
 
 // Create the express application.
@@ -20,7 +20,7 @@ app.use(
 );
 app.use(cookieParser());
 app.use(auth.moveTokenToPassportHeader);
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(passport.initialize());
 

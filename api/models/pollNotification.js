@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  let PollNotification = sequelize.define(
+  const PollNotification = sequelize.define(
     'PollNotification',
     {
       id: {
@@ -34,7 +34,7 @@ module.exports = (sequelize, DataTypes) => {
     {},
   );
 
-  PollNotification.associate = models => {
+  PollNotification.associate = (models) => {
     PollNotification.belongsTo(models.Notification, {
       foreignKey: 'notificationId',
     });

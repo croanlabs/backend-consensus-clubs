@@ -1,19 +1,19 @@
-const config = require('../config');
-const db = require('../config/database');
-const Notification = db.Notification;
-const UserNotification = db.UserNotification;
-const GeneralNotification = db.GeneralNotification;
-const PollNotification = db.PollNotification;
+const {
+  Notification,
+  UserNotification,
+  GeneralNotification,
+  PollNotification,
+} = require('../config/database').Notification;
 
-let exp = (module.exports = {});
+const exp = module.exports;
 
 /**
  * Create a notification for all users.
  *
  */
 exp.notifyAll = async text => {
-  let notification = await Notification.create({text});
-  let genNotification = await GeneralNotification.create({
+  const notification = await Notification.create({text});
+  const genNotification = await GeneralNotification.create({
     notificationId: notification.id,
   });
   return [notification.id, genNotification.id];
@@ -25,8 +25,8 @@ exp.notifyAll = async text => {
  *
  */
 exp.notifyPollEvent = async (text, pollId, candidateId) => {
-  let notification = await Notification.create({text});
-  let pollNotification = await PollNotification.create({
+  const notification = await Notification.create({text});
+  const pollNotification = await PollNotification.create({
     notificationId: notification.id,
     pollId,
     candidateId,
@@ -39,8 +39,8 @@ exp.notifyPollEvent = async (text, pollId, candidateId) => {
  *
  */
 exp.notifyUser = async (text, userId) => {
-  let notification = await Notification.create({text});
-  let userNotification = await UserNotification.create({
+  const notification = await Notification.create({text});
+  const userNotification = await UserNotification.create({
     notificationId: notification.id,
     userId,
   });
@@ -51,8 +51,8 @@ exp.notifyUser = async (text, userId) => {
  * Get notifications for a user.
  *
  */
-exp.getNotifications = async userId => {
-  return Notification.findAll({
+exp.getNotifications = async userId =>
+  Notification.findAll({
     order: [['createdAt', 'DESC']],
     include: [
       {
@@ -62,4 +62,3 @@ exp.getNotifications = async userId => {
       },
     ],
   });
-};

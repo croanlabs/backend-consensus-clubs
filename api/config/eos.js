@@ -13,8 +13,8 @@ function confEos() {
     expireInSeconds: 60,
     broadcast: true,
     verbose: false,
-    sign: true
-  }
+    sign: true,
+  };
   return Eos(eosConfig);
 }
 

@@ -1,5 +1,3 @@
-let exp = module.exports = {};
+const exp = module.exports;
 
-exp.sleep = (milliseconds) => {
-  return new Promise(resolve => setTimeout(resolve, milliseconds))
-}
+exp.sleep = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));

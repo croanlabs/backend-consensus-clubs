@@ -1,20 +1,19 @@
-const config = require('../config');
 const expressJwt = require('express-jwt');
 const jwt = require('jsonwebtoken');
+const config = require('../config');
 
-let exp = (module.exports = {});
+module.exports = {};
+const exp = module.exports;
 
-exp.createToken = auth => {
-  return jwt.sign(
-    {
-      id: auth.id,
-    },
-    config.authTokenSecret,
-    {
-      expiresIn: 60 * 120,
-    },
-  );
-};
+exp.createToken = auth => jwt.sign(
+  {
+    id: auth.id,
+  },
+  config.authTokenSecret,
+  {
+    expiresIn: 60 * 120,
+  },
+);
 
 exp.generateToken = (req, res, next) => {
   req.token = exp.createToken(req.auth);
@@ -36,7 +35,7 @@ exp.moveTokenToPassportHeader = (req, res, next) => {
 exp.authenticate = expressJwt({
   secret: config.authTokenSecret,
   requestProperty: 'auth',
-  getToken: req => {
+  getToken: (req) => {
     if (req.headers['x-auth-token']) {
       return req.headers['x-auth-token'];
     }

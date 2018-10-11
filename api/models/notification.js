@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  let Notification = sequelize.define(
+  const Notification = sequelize.define(
     'Notification',
     {
       id: {
@@ -13,8 +13,6 @@ module.exports = (sequelize, DataTypes) => {
     },
     {},
   );
-
-  Notification.associate = models => {};
 
   return Notification;
 };

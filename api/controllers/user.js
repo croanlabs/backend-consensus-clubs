@@ -2,15 +2,16 @@ const userService = require('../services/user');
 const twitterService = require('../services/twitter');
 const auth = require('../middleware/auth');
 
-module.exports.set = app => {
+module.exports.set = (app) => {
   app.get('/user/opinions', auth.authenticate, async (req, res) => {
     if (!req.auth) {
       res.status(403).send();
     }
-    let userOpinions = await userService
+    const userOpinions = await userService
       .getUserOpinions(req.auth.id)
-      .catch(err => {
+      .catch((err) => {
         // TODO logger
+        console.log(err);
         res.status(500).send();
       });
     res.send(userOpinions);

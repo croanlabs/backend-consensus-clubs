@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  let GeneralNotification = sequelize.define(
+  const GeneralNotification = sequelize.define(
     'GeneralNotification',
     {
       id: {
@@ -14,11 +14,13 @@ module.exports = (sequelize, DataTypes) => {
           referencesKey: 'id',
         },
       },
+      createdAt: DataTypes.DATE,
+      updatedAt: DataTypes.DATE,
     },
     {},
   );
 
-  GeneralNotification.associate = models => {
+  GeneralNotification.associate = (models) => {
     GeneralNotification.belongsTo(models.Notification, {
       foreignKey: 'notificationId',
     });

@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-dynamic-require
 const envSpecific = require(`./environments/${process.env.NODE_ENV || 'development'}`);
 const config = {};
 
@@ -34,9 +35,9 @@ config.eosUserPrivKey = process.env.EOS_USER_PRIVATE_KEY;
 config.eosUserPubKey = process.env.EOS_USER_PUBLIC_KEY;
 
 // Override or add env specific variables
-// FIXME move merge function to helpers and just call it here.
-for (let key in envSpecific) {
+const confKeys = Object.keys(envSpecific);
+confKeys.forEach(key => {
   config[key] = envSpecific[key];
-}
+});
 
 module.exports = config;

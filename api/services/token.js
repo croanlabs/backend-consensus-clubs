@@ -1,6 +1,4 @@
-const config = require('../config');
-
-let exp = module.exports;
+const exp = module.exports;
 
 const aBondingCurve = 0.25;
 
@@ -11,6 +9,4 @@ exp.meritsToTokens = (merits, supply) => {
   return newSupply - supply;
 };
 
-exp.tokenPrice = supply => {
-  return supply * aBondingCurve;
-};
+exp.tokenPrice = supply => supply * aBondingCurve;

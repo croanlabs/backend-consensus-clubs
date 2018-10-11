@@ -2,16 +2,20 @@ const Sequelize = require('sequelize');
 const config = require('./config');
 const models = require('../models');
 
-const sequelize = new Sequelize(config.postgresDbName, config.postgresUser,
-  config.postgresPass, {
+const sequelize = new Sequelize(
+  config.postgresDbName,
+  config.postgresUser,
+  config.postgresPass,
+  {
     host: config.postgresHost,
     port: config.postgresPort,
     dialect: 'postgres',
     operatorsAliases: false,
     define: {
-      timestamps: true
-    }
-  });
+      timestamps: true,
+    },
+  },
+);
 
 sequelize
   .authenticate()
@@ -23,7 +27,7 @@ sequelize
   });
 
 // Load and get all the models and their associations
-let db = models.setAndGet(sequelize);
+const db = models.setAndGet(sequelize);
 db.sequelize = sequelize;
 
 module.exports = db;

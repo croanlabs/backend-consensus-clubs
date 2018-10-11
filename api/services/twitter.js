@@ -1,6 +1,6 @@
 const twitterClient = require('../config/twitter');
 
-let exp = (module.exports = {});
+const exp = module.exports;
 
 /**
  * Search users on Twitter.
@@ -8,40 +8,30 @@ let exp = (module.exports = {});
  * Return array of coincidences.
  *
  */
-exp.searchTwitterUsers = user => {
-  return twitterClient.get(
-    'users/search',
-    {
-      q: user,
-      count: 5,
-      include_entities: false,
-    })
-    .then((data) => {
-      return data;
-    })
-    .catch((err) => {
-      // TODO logger
-      console.log(err);
-    })
-};
+exp.searchTwitterUsers = user => twitterClient
+  .get('users/search', {
+    q: user,
+    count: 5,
+    include_entities: false,
+  })
+  .then(data => data)
+  .catch((err) => {
+    // TODO logger
+    console.log(err);
+  });
 
 /**
  * Fetch Twitter user info by its id.
  *
  */
-exp.getTwitterUserById = userId => {
-  return twitterClient.get(
-    'users/lookup',
-    {
-      user_id: userId,
-      include_entities: false,
-    })
-    .then((data) => {
-      return data;
-    })
-    .catch((err) => {
-      //TODO logger
-      console.log(err);
-      return [];
-    });
-};
+exp.getTwitterUserById = userId => twitterClient
+  .get('users/lookup', {
+    user_id: userId,
+    include_entities: false,
+  })
+  .then(data => data)
+  .catch((err) => {
+    // TODO logger
+    console.log(err);
+    return [];
+  });
