@@ -20,11 +20,10 @@ void consensus_clubs::newuser(string name, uint64_t unopinionated_merits) {
  * Insert a new poll into the polls table.
  *
  */
-void consensus_clubs::newpoll(string question, string description) {
+void consensus_clubs::newpoll(string question) {
   polls.emplace(_self, [&](auto& new_poll) {
     new_poll.id = polls.available_primary_key();
     new_poll.question = question;
-    new_poll.description = description;
   });
 }
 

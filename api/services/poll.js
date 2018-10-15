@@ -1,88 +1,119 @@
+const config = require('../config');
+const { Candidate, Poll, sequelize} = require('../config/database');
 const eos = require('../config/eos');
 const eosService = require('./eos');
-const config = require('../config');
 
-let exp = module.exports = {};
+const exp = (module.exports = {});
 
 /**
  * Get list of polls with their candidates.
  *
  */
 exp.getPolls = async () => {
-  let pollRes = await eosService.getPagedResults('polls', 0);
-  let polls;
-  if (pollRes.rows.length) {
-    polls = pollRes.rows;
-  } else {
-    return null;
-  }
-  let candidatesPromises = [];
-  polls.forEach(p => {
-    candidatesPromises.push(exp.getPollCandidates(p.id));
+  const res = await Poll.findAll({
+    include: [
+      {
+        model: Candidate,
+        as: 'candidates',
+        required: false,
+      },
+    ],
   });
-  return Promise.all(candidatesPromises).then(candidates => {
-    for (let i = 0; i < polls.length; i++) {
-      polls[i].candidates = candidates[i];
-    }
-    return polls;
-  });
+  return res;
 };
 
 /**
  * Get poll by id with its candidates.
  *
  */
-exp.getPoll = pollId => {
-  return Promise.all([
-    eosService.getRowById('polls', pollId),
-    exp.getPollCandidates(pollId),
-  ]).then(res => {
-    let poll = res[0];
-    let candidatesRes = res[1];
-    if (!poll) {
-      return null;
-    }
-    poll.candidates = candidatesRes;
-    return poll;
+exp.getPoll = async pollId => {
+  const res = await Poll.find({
+    where: {
+      id: userDeviceId,
+    },
+    include: [
+      {
+        model: Candidate,
+        as: 'candidates',
+        required: false,
+      },
+    ],
   });
-};
-
-exp.getPollCandidates = pollId => {
-  return eosService.getRowsUsingIndex('candidates', pollId, 2).then(res => {
-    // FIXME when query using secondary index is working properly
-    // this filter will not be necessary anymore.
-    return res.filter(c => c['poll_id'] == pollId);
-  });
+  return res.get({plain: true});
 };
 
 /**
- * Insert a poll into the polls table on the blockchain.
+ * Insert a poll into the polls table on the relational database and blockchain.
  *
  */
-exp.createPoll = (question, description) => {
-  return eos.contract(config.eosUsername).then(contract => {
+exp.createPoll = async question => {
+    const transaction = await sequelize.transaction();
+    const [poll, created] = await Poll.findOrCreate({
+      where: {question},
+      transaction,
+    });
+    if (!created) {
+      transaction.commit();
+      return;
+    }
     const options = {authorization: [`${config.eosUsername}@active`]};
-    return contract.newpoll(question, description, options);
-  });
+    try {
+      const contract = await eos.contract(config.eosUsername);
+      await contract.newpoll(question, options);
+    } catch (error) {
+      // TODO logger
+      console.log(error);
+      transaction.rollback();
+    }
+    transaction.commit();
 };
 
 /**
- * Insert a poll candidate into the candidates table on the
- * blockchain.
+ * Insert a poll candidate into the Candidates table.
  *
  * This function is likely to be used to create the initial set
  * of polls or to be used by the admin as it does not imply staking
  * any coins on the new option.
  *
- * Effects on the blockchain:
- *  - Insert candidate into candidates table
- *  - Insert token for the new candidate into tokens table
+ * Effects on the database:
+ *  - Insert candidate into Candidates table
+ *  - Insert token for the new candidate into Tokens table
  *
  */
-exp.addCandidate = (pollId, name, description, twitterUser, profilePictureUrl) => {
-  return eos.contract(config.eosUsername).then(contract => {
-    const options = {authorization: [`${config.eosUsername}@active`]};
-    return contract.newcandidate(
+exp.addCandidate = async (
+  pollId,
+  name,
+  description,
+  twitterUser,
+  profilePictureUrl,
+) => {
+  const transaction = await sequelize.transaction();
+  const Op = sequelize.Op;
+  const [candidate, created] = await Candidate.findOrCreate({
+    where: {
+      [Op.and]: [{pollId: pollId}, {twitterUser: twitterUser}],
+    },
+    defaults: {
+      pollId,
+      name,
+      description,
+      twitterUser,
+      profilePictureUrl,
+      totalTokensConfidence: 0,
+      totalTokensOpposition: 0,
+      totalMeritsConfidence: 0,
+      totalMeritsOpposition: 0,
+    },
+    transaction,
+  });
+  if (!created) {
+    transaction.commit();
+    return;
+  }
+  try {
+    const contract = await eos.contract(config.eosUsername);
+    const options = { authorization: [`${config.eosUsername}@active`] };
+    contract.newcandidate(
       pollId,
       name,
       description,
@@ -90,14 +121,19 @@ exp.addCandidate = (pollId, name, description, twitterUser, profilePictureUrl) =
       profilePictureUrl,
       options,
     );
-  });
+  } catch (err) {
+    // TODO logger
+    console.log(err);
+    transaction.callback();
+    return;
+  }
+  transaction.commit();
 };
 
 /**
- * Insert a candidate added by a user to the candidates table on
- * the blockchain.
+ * Insert a candidate added by a user to the Candidates table.
  *
- * Effects on the blockchain:
+ * Effects on the database:
  *  - Insert candidate into candidates table adding the new tokens
  *    for the user that proposes the candidate
  *  - Insert token for the new candidate into tokens table

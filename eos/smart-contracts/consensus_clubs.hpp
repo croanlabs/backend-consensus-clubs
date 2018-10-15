@@ -1,4 +1,3 @@
-#include <eosiolib/eosio.hpp>
 #include "table_types.hpp"
 
 using namespace eosio;
@@ -27,7 +26,7 @@ class consensus_clubs : public eosio::contract {
     void newuser(string name, uint64_t unopinionated_merits);
 
     /// @abi action
-    void newpoll(string question, string description);
+    void newpoll(string question);
 
     /// @abi action
     void newcandidate(

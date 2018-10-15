@@ -38,13 +38,11 @@ module.exports.set = (app) => {
 
   app.post('/polls/create', (req, res) => {
     pollService
-      .createPoll(req.body.question, req.body.description)
+      .createPoll(req.body.question)
       .then(() => {
         res.status(200).send();
       })
       .catch((err) => {
-        // TODO logger
-        console.log(err);
         res.status(500).json({
           error: 'Error creating poll',
         });
@@ -60,6 +58,7 @@ module.exports.set = (app) => {
         && req.body.name
         && req.body.description
         && req.body.twitterUser
+        && req.body.profilePictureUrl
       )
     ) {
       res.status(500).send('Error: required parameter not set.');
@@ -70,6 +69,7 @@ module.exports.set = (app) => {
         req.body.name,
         req.body.description,
         req.body.twitterUser,
+        req.body.profilePictureUrl
       )
       .then(() => {
         res.status(200).send();
