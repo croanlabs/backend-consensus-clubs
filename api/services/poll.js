@@ -1,6 +1,7 @@
 const config = require('../config');
 const {
   Candidate,
+  Opinion,
   Poll,
   TokenHolder,
   User,
@@ -101,7 +102,7 @@ exp.addCandidate = async (
   }
   const Op = sequelize.Op;
   const [candidate, created] = await Candidate.findOrCreate({
-    where: { pollId, twitterUser },
+    where: {pollId, twitterUser},
     defaults: {
       pollId,
       name,
@@ -227,7 +228,10 @@ exp.expressOpinion = async (
     transaction = await sequelize.transaction();
     isExistingTransaction = false;
   }
-  const user = await User.findById(userId, {lock: transaction.LOCK});
+  const user = await User.findById(userId, {
+    lock: transaction.LOCK,
+    transaction,
+  });
   if (!user) {
     transaction.rollback();
     throw 'Error creating opinion: user not found';
@@ -245,7 +249,13 @@ exp.expressOpinion = async (
     commitmentMerits,
     transaction,
   );
-  await exp.createOrUpdateOpinion(userId, candidateId, confidence, tokenAmount);
+  await exp.createOrUpdateOpinion(
+    userId,
+    candidateId,
+    confidence,
+    tokenAmount,
+    transaction,
+  );
   transaction.commit();
   // const actionType = confidence ? 'CONFIDENCE' : 'NO_CONFIDENCE';
   // newaction(userId, candidateId, actionType, commitmentMerits);
@@ -264,7 +274,6 @@ exp.allocateTokens = async (
 ) => {
   // Update candidate
   let candidate = await Candidate.findById(candidateId, {transaction});
-
   const supply = confidence
     ? candidate.totalTokensConfidence
     : candidate.totalTokensOpposition;
@@ -281,7 +290,8 @@ exp.allocateTokens = async (
   // Update token holders
   let tokenHolder = await TokenHolder.findOne({
     where: {userId, candidateId, confidence},
-    lock: transaction.LOCK,
+    lock: transaction.LOCK.UPDATE,
+    transaction,
   });
   if (tokenHolder) {
     tokenHolder.tokenAmount += tokenAmount;
@@ -300,13 +310,27 @@ exp.allocateTokens = async (
  * TODO
  *
  */
-exp.createOrUpdateOpinion = (
+exp.createOrUpdateOpinion = async (
   userId,
   candidateId,
   confidence,
-  commitmentMerits,
+  tokenAmount,
+  transaction,
 ) => {
-  console.log('creating or updating opinion');
+  let opinion = await Opinion.findOne({
+    where: {userId, candidateId},
+    lock: transaction.LOCK.UPDATE,
+    transaction,
+  });
+  if (opinion) {
+    opinion.tokenAmount += tokenAmount;
+    opinion.save({transaction});
+  } else {
+    Opinion.create(
+      {userId, candidateId, confidence, tokenAmount},
+      {transaction},
+    );
+  }
 };
 
 /**

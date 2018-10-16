@@ -34,6 +34,7 @@ module.exports = (sequelize, DataTypes) => {
     });
     Candidate.hasMany(models.Opinion, {
       as: 'opinions',
+      foreignKey: 'candidateId',
     });
   };
 
