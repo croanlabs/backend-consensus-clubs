@@ -8,6 +8,7 @@ module.exports = (sequelize, DataTypes) => {
         autoIncrement: true,
       },
       username: DataTypes.STRING,
+      unopinionatedMerits: DataTypes.DOUBLE,
       externalInfo: DataTypes.JSON,
       createdAt: DataTypes.DATE,
       updatedAt: DataTypes.DATE,
@@ -18,12 +19,15 @@ module.exports = (sequelize, DataTypes) => {
   User.associate = (models) => {
     User.hasMany(models.Opinion, {
       as: 'opinions',
+      foreignKey: 'userId',
     });
     User.hasMany(models.TokenHolder, {
       as: 'tokens',
+      foreignKey: 'userId',
     });
     User.hasMany(models.Action, {
       as: 'actions',
+      foreignKey: 'userId',
     });
   };
 

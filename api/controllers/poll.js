@@ -92,7 +92,7 @@ module.exports.set = (app) => {
       }
       // TODO specify minimum number of merits to stake.
       pollService
-        .addCandidate(
+        .userAddCandidate(
           req.auth.id,
           req.params.pollId,
           req.body.name,
