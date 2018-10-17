@@ -1,5 +1,7 @@
 const config = require('../config');
 const {
+  Action,
+  ActionType,
   Candidate,
   Opinion,
   Poll,
@@ -10,6 +12,7 @@ const {
 const eos = require('../config/eos');
 const eosService = require('./eos');
 const tokenService = require('./token');
+const userService = require('./user');
 
 const exp = (module.exports = {});
 
@@ -92,13 +95,13 @@ exp.addCandidate = async (
   profilePictureUrl,
   options,
 ) => {
-  let isExistingTransaction = true;
+  let isLocalTransaction = true;
   let transaction;
   if (options && options.transaction) {
     transaction = options.transaction;
+    isLocalTransaction = false;
   } else {
     transaction = await sequelize.transaction();
-    isExistingTransaction = false;
   }
   const Op = sequelize.Op;
   const [candidate, created] = await Candidate.findOrCreate({
@@ -137,7 +140,7 @@ exp.addCandidate = async (
     transaction.callback();
     throw 'Error: there were problems while inserting the candidate into the blockchain';
   }
-  if (!isExistingTransaction) {
+  if (isLocalTransaction) {
     transaction.commit();
   }
   return candidate;
@@ -170,19 +173,24 @@ exp.userAddCandidate = async (
     throw 'Error: insufficient merits';
   }
   const transaction = await sequelize.transaction();
-  const candidate = await exp.addCandidate(
-    pollId,
-    name,
-    description,
-    twitterUser,
-    profilePictureUrl,
-    {
+  try {
+    const candidate = await exp.addCandidate(
+      pollId,
+      name,
+      description,
+      twitterUser,
+      profilePictureUrl,
+      {
+        transaction,
+      },
+    );
+    await exp.expressOpinion(userId, candidate.id, confidence, commitmentMerits, {
       transaction,
-    },
-  );
-  await exp.expressOpinion(userId, candidate.id, confidence, commitmentMerits, {
-    transaction,
-  });
+    });
+  } catch (err) {
+    transaction.rollback();
+    throw err;
+  }
   transaction.commit();
   //const isConfidence = confidence === true ? 1 : 0;
   //return eos.contract(config.eosUsername).then(contract => {
@@ -220,49 +228,59 @@ exp.expressOpinion = async (
   commitmentMerits,
   options,
 ) => {
-  let isExistingTransaction = true;
+  let isLocalTransaction = true;
   let transaction;
   if (options && options.transaction) {
     transaction = options.transaction;
+    isLocalTransaction = false;
   } else {
     transaction = await sequelize.transaction();
-    isExistingTransaction = false;
   }
-  const user = await User.findById(userId, {
-    lock: transaction.LOCK,
-    transaction,
-  });
-  if (!user) {
-    transaction.rollback();
-    throw 'Error creating opinion: user not found';
+
+  // Try to perform all the database access operations.
+  // If any of them throw an error rollback the rollback the transaction.
+  try {
+    await userService.updateUserMerits(userId, -commitmentMerits, {transaction});
+    const tokenAmount = await exp.allocateTokens(
+      userId,
+      candidateId,
+      confidence,
+      commitmentMerits,
+      transaction,
+    );
+    await exp.createOrUpdateOpinion(
+      userId,
+      candidateId,
+      confidence,
+      tokenAmount,
+      transaction,
+    );
+
+    const actionTypeName = confidence ? 'confidence' : 'opposition';
+    const actionType = await ActionType.findOne({where: {name: actionTypeName}});
+    if (!actionType) {
+      transaction.rollback();
+      throw 'Error: action types not loaded';
+    }
+    await Action.create({
+      userId,
+      candidateId,
+      actionTypeId: actionType.id,
+      merits: commitmentMerits,
+    }, {transaction});
+    if (isLocalTransaction) {
+      transaction.commit();
+    }
+  } catch (err) {
+    if (isLocalTransaction) {
+      transaction.rollback();
+    }
+    throw err;
   }
-  if (user.unopinionatedMerits <= commitmentMerits) {
-    transaction.rollback();
-    throw 'Error: insufficient merits';
-  }
-  user.unopinionatedMerits -= commitmentMerits;
-  user.save({transaction});
-  const tokenAmount = await exp.allocateTokens(
-    userId,
-    candidateId,
-    confidence,
-    commitmentMerits,
-    transaction,
-  );
-  await exp.createOrUpdateOpinion(
-    userId,
-    candidateId,
-    confidence,
-    tokenAmount,
-    transaction,
-  );
-  transaction.commit();
-  // const actionType = confidence ? 'CONFIDENCE' : 'NO_CONFIDENCE';
-  // newaction(userId, candidateId, actionType, commitmentMerits);
 };
 
 /**
- * TODO
+ * Allocate candidate tokens for a user.
  *
  */
 exp.allocateTokens = async (
@@ -302,12 +320,15 @@ exp.allocateTokens = async (
       {transaction},
     );
   }
-
   return tokenAmount;
 };
 
 /**
- * TODO
+ * Create or update the opinion of the user about a candidate.
+ *
+ * If the user had already expressed an opinion about a candidate
+ * that opinion is updated accumulating the tokens of the new opinion,
+ * otherwise it inserts a new opinion.
  *
  */
 exp.createOrUpdateOpinion = async (
@@ -324,9 +345,9 @@ exp.createOrUpdateOpinion = async (
   });
   if (opinion) {
     opinion.tokenAmount += tokenAmount;
-    opinion.save({transaction});
+    await opinion.save({transaction});
   } else {
-    Opinion.create(
+    await Opinion.create(
       {userId, candidateId, confidence, tokenAmount},
       {transaction},
     );

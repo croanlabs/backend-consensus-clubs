@@ -34,6 +34,7 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: 'userId',
     });
     Opinion.belongsTo(models.Candidate, {
+      as: 'candidate',
       foreignKey: 'candidateId',
     });
   };

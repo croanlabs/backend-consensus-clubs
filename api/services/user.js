@@ -1,7 +1,7 @@
 const config = require('../config');
 const eos = require('../config/eos');
 const eosService = require('./eos');
-const {sequelize, User} = require('../config/database');
+const {Candidate, Opinion, User, sequelize} = require('../config/database');
 
 const exp = module.exports;
 
@@ -18,7 +18,7 @@ exp.findOrCreate = (username, externalInfo) =>
       },
       defaults: {
         externalInfo,
-        unopinionatedMerits: 1000
+        unopinionatedMerits: 1000,
       },
       transaction: tx,
     })
@@ -42,6 +42,32 @@ exp.findOrCreate = (username, externalInfo) =>
         return [null, false];
       }),
   );
+
+/**
+ * Update the number of unopinionated merits the user has.
+ *
+ * Pass a positive number of merits in order to increase the
+ * unopinionated merits and a negative number to decrease it.
+ *
+ */
+exp.updateUserMerits = async (userId, merits, options) => {
+  let optionsUpdate = {};
+  if (options && options.transaction) {
+    optionsUpdate = {
+      lock: options.transaction.LOCK.UPDATE,
+      transaction: options.transaction,
+    };
+  }
+  const user = await User.findById(userId, optionsUpdate);
+  if (!user) {
+    throw 'Error updating merits: user not found';
+  }
+  if (user.unopinionatedMerits <= merits) {
+    throw 'Error: insufficient merits';
+  }
+  user.unopinionatedMerits += merits;
+  user.save(optionsUpdate);
+};
 
 /**
  * Insert a user into the table users on the blockchain.
@@ -70,21 +96,15 @@ exp.newReferral = referredBy =>
  * on the blockchain.
  *
  */
-exp.getUserOpinions = async (userId, options = {}) => {
-  const userOpinions = await eosService.getPagedResults('opinions', userId, {
-    page: options.page || 1,
-    pageSize: options.pageSize || 10,
-    indexId: 2, // userId index
+exp.getUserOpinions = (userId, options = {}) => {
+  return Opinion.findAll({
+    where: {userId},
+    include: [
+      {
+        model: Candidate,
+        as: 'candidate',
+        required: true,
+      },
+    ],
   });
-  const promises = userOpinions.rows.map(opinion =>
-    eosService
-      .getRowById('candidates', opinion.candidate_id)
-      .then(candidate => {
-        const res = opinion;
-        res.candidate = candidate;
-        return res;
-      }),
-  );
-  await Promise.all(promises);
-  return userOpinions;
 };

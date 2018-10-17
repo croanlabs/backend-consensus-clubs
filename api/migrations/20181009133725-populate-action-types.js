@@ -6,7 +6,7 @@ module.exports = {
       updatedAt: new Date(),
     },
     {
-      name: 'oposition',
+      name: 'opposition',
       createdAt: new Date(),
       updatedAt: new Date(),
     },
