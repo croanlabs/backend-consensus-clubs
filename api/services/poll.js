@@ -10,11 +10,11 @@ const {
   sequelize,
 } = require('../config/database');
 const eos = require('../config/eos');
-const eosService = require('./eos');
 const tokenService = require('./token');
+const twitterService = require('./twitter');
 const userService = require('./user');
 
-const exp = (module.exports = {});
+const exp = module.exports;
 
 /**
  * Get list of polls with their candidates.
@@ -40,7 +40,7 @@ exp.getPolls = async () => {
 exp.getPoll = async pollId => {
   const res = await Poll.find({
     where: {
-      id: userDeviceId,
+      id: pollId,
     },
     include: [
       {
@@ -59,10 +59,10 @@ exp.getPoll = async pollId => {
  */
 exp.createPoll = async question => {
   const transaction = await sequelize.transaction();
-  const [poll, created] = await Poll.findOrCreate({
+  const created = await Poll.findOrCreate({
     where: {question},
     transaction,
-  });
+  })[1];
   if (!created) {
     transaction.commit();
     return;
@@ -87,31 +87,27 @@ exp.createPoll = async question => {
  *  - Insert token for the new candidate into Tokens table
  *
  */
-exp.addCandidate = async (
-  pollId,
-  name,
-  description,
-  twitterUser,
-  profilePictureUrl,
-  options,
-) => {
+exp.addCandidate = async (pollId, twitterUser, options) => {
   let isLocalTransaction = true;
   let transaction;
   if (options && options.transaction) {
-    transaction = options.transaction;
+    ({ transaction } = options);
     isLocalTransaction = false;
   } else {
     transaction = await sequelize.transaction();
   }
-  const Op = sequelize.Op;
+  console.log(twitterUser);
+  const candTwitter = await twitterService.getTwitterUserByIdOrScreenName({
+    screenName: twitterUser,
+  });
   const [candidate, created] = await Candidate.findOrCreate({
     where: {pollId, twitterUser},
     defaults: {
       pollId,
-      name,
-      description,
+      name: candTwitter.name,
+      description: candTwitter.description,
       twitterUser,
-      profilePictureUrl,
+      profilePictureUrl: candTwitter.profile_image_url,
       totalTokensConfidence: 0,
       totalTokensOpposition: 0,
       totalMeritsConfidence: 0,
@@ -121,24 +117,24 @@ exp.addCandidate = async (
   });
   if (!created) {
     transaction.rollback();
-    throw 'Error: candidate already exists';
+    throw new Error('Error: candidate already exists');
   }
   try {
     const contract = await eos.contract(config.eosUsername);
-    const options = {authorization: [`${config.eosUsername}@active`]};
+    const eosOptions = {authorization: [`${config.eosUsername}@active`]};
     await contract.newcandidate(
       pollId,
-      name,
-      description,
+      candTwitter.name,
+      candTwitter.description,
       twitterUser,
-      profilePictureUrl,
-      options,
+      candTwitter.profile_image_url,
+      eosOptions,
     );
   } catch (err) {
     // TODO logger
     console.log(err);
-    transaction.callback();
-    throw 'Error: there were problems while inserting the candidate into the blockchain';
+    transaction.rolllback();
+    throw new Error('Error: there were problems while inserting the candidate into the blockchain');
   }
   if (isLocalTransaction) {
     transaction.commit();
@@ -161,39 +157,35 @@ exp.addCandidate = async (
 exp.userAddCandidate = async (
   userId,
   pollId,
-  name,
-  description,
   twitterUser,
-  profilePictureUrl,
   confidence,
   commitmentMerits,
 ) => {
   const user = await User.findById(userId);
   if (user.unopinionatedMerits <= commitmentMerits) {
-    throw 'Error: insufficient merits';
+    throw new Error('Error: insufficient merits');
   }
   const transaction = await sequelize.transaction();
   try {
-    const candidate = await exp.addCandidate(
-      pollId,
-      name,
-      description,
-      twitterUser,
-      profilePictureUrl,
+    const candidate = await exp.addCandidate(pollId, twitterUser, {
+      transaction,
+    });
+    await exp.expressOpinion(
+      userId,
+      candidate.id,
+      confidence,
+      commitmentMerits,
       {
         transaction,
       },
     );
-    await exp.expressOpinion(userId, candidate.id, confidence, commitmentMerits, {
-      transaction,
-    });
   } catch (err) {
     transaction.rollback();
     throw err;
   }
   transaction.commit();
-  //const isConfidence = confidence === true ? 1 : 0;
-  //return eos.contract(config.eosUsername).then(contract => {
+  // const isConfidence = confidence === true ? 1 : 0;
+  // return eos.contract(config.eosUsername).then(contract => {
   //  const options = {authorization: [`${config.eosUsername}@active`]};
   //  return contract.newcanduser(
   //    userId,
@@ -206,7 +198,7 @@ exp.userAddCandidate = async (
   //    commitmentMerits,
   //    options,
   //  );
-  //});
+  // });
 };
 
 /**
@@ -231,7 +223,7 @@ exp.expressOpinion = async (
   let isLocalTransaction = true;
   let transaction;
   if (options && options.transaction) {
-    transaction = options.transaction;
+    ({transaction} = options);
     isLocalTransaction = false;
   } else {
     transaction = await sequelize.transaction();
@@ -240,7 +232,9 @@ exp.expressOpinion = async (
   // Try to perform all the database access operations.
   // If any of them throw an error rollback the rollback the transaction.
   try {
-    await userService.updateUserMerits(userId, -commitmentMerits, {transaction});
+    await userService.updateUserMerits(userId, -commitmentMerits, {
+      transaction,
+    });
     const tokenAmount = await exp.allocateTokens(
       userId,
       candidateId,
@@ -257,17 +251,22 @@ exp.expressOpinion = async (
     );
 
     const actionTypeName = confidence ? 'confidence' : 'opposition';
-    const actionType = await ActionType.findOne({where: {name: actionTypeName}});
+    const actionType = await ActionType.findOne({
+      where: {name: actionTypeName},
+    });
     if (!actionType) {
       transaction.rollback();
-      throw 'Error: action types not loaded';
+      throw new Error('Error: action types not loaded');
     }
-    await Action.create({
-      userId,
-      candidateId,
-      actionTypeId: actionType.id,
-      merits: commitmentMerits,
-    }, {transaction});
+    await Action.create(
+      {
+        userId,
+        candidateId,
+        actionTypeId: actionType.id,
+        merits: commitmentMerits,
+      },
+      {transaction},
+    );
     if (isLocalTransaction) {
       transaction.commit();
     }
@@ -291,7 +290,7 @@ exp.allocateTokens = async (
   transaction,
 ) => {
   // Update candidate
-  let candidate = await Candidate.findById(candidateId, {transaction});
+  const candidate = await Candidate.findById(candidateId, {transaction});
   const supply = confidence
     ? candidate.totalTokensConfidence
     : candidate.totalTokensOpposition;
@@ -306,7 +305,7 @@ exp.allocateTokens = async (
   await candidate.save({transaction});
 
   // Update token holders
-  let tokenHolder = await TokenHolder.findOne({
+  const tokenHolder = await TokenHolder.findOne({
     where: {userId, candidateId, confidence},
     lock: transaction.LOCK.UPDATE,
     transaction,
@@ -338,7 +337,7 @@ exp.createOrUpdateOpinion = async (
   tokenAmount,
   transaction,
 ) => {
-  let opinion = await Opinion.findOne({
+  const opinion = await Opinion.findOne({
     where: {userId, candidateId},
     lock: transaction.LOCK.UPDATE,
     transaction,
@@ -363,7 +362,7 @@ exp.expressOpinionBlockchain = (
   confidence,
   commitmentMerits,
 ) => {
-  const isConfidence = confidence == true ? 1 : 0;
+  const isConfidence = confidence === true ? 1 : 0;
   return eos.contract(config.eosUsername).then(contract => {
     const options = {authorization: [`${config.eosUsername}@active`]};
     return contract.newopinion(
@@ -388,7 +387,7 @@ exp.expressOpinionBlockchain = (
  *
  */
 exp.redeem = (userId, candidateId, confidence, percentage) => {
-  const isConfidence = confidence == true ? 1 : 0;
+  const isConfidence = confidence === true ? 1 : 0;
   return eos.contract(config.eosUsername).then(contract => {
     const options = {authorization: [`${config.eosUsername}@active`]};
     return contract.redeem(
