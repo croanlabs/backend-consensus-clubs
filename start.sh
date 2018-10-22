@@ -12,8 +12,8 @@ fi
 
 # Create secrets
 echo 'Creating Kubernetes secrets...'
-kubectl create -f config/secrets/api-secrets.yaml
-kubectl create -f config/secrets/eos-secrets.yaml
+kubectl apply -f config/secrets/api-secrets.yaml
+kubectl apply -f config/secrets/eos-secrets.yaml
 
 # If it's production environment do not build the docker images because
 # they should have been pushed to dockerhub before.
@@ -26,30 +26,30 @@ else
 fi
 
 echo 'Creating secrets...'
-kubectl create -f config/secrets/environments/api-secrets-$ENVIRONMENT.yaml
+kubectl apply -f config/secrets/environments/api-secrets-$ENVIRONMENT.yaml
 
 echo 'Creating configmap to set DNS server properly'
 # See https://github.com/kubernetes/minikube/issues/2027
-kubectl create -f config/kube-app-entities/configmap-dns.yaml
+kubectl apply -f config/kube-app-entities/configmap-dns.yaml
 
 # App components
 echo 'Creating app components...'
-kubectl create -f config/kube-app-entities/eos.yaml
-kubectl create -f config/kube-app-entities/postgres.yaml
+kubectl apply -f config/kube-app-entities/eos.yaml
+kubectl apply -f config/kube-app-entities/postgres.yaml
 
 # Create tests components if the environment is not production
 if [ "$ENVIRONMENT" != 'production' ]; then
-  kubectl create -f config/kube-app-entities/eos-tests.yaml
-  kubectl create -f config/kube-app-entities/postgres-tests.yaml
+  kubectl apply -f config/kube-app-entities/eos-tests.yaml
+  kubectl apply -f config/kube-app-entities/postgres-tests.yaml
 fi
 
 # Wait until the blockchain is ready and create the api components
 # For the EKS cluster the load balancer has to be created, otherwise
 # a NodePort service is created.
 sleep 15
-kubectl create -f config/kube-app-entities/node-deployment.yaml
+kubectl apply -f config/kube-app-entities/node-deployment.yaml
 if [ "$ENVIRONMENT" == 'development' ]; then
-  kubectl create -f config/kube-app-entities/node-nodeport.yaml
+  kubectl apply -f config/kube-app-entities/node-nodeport.yaml
 else
-  kubectl create -f config/kube-app-entities/node-load-balancer.yaml
+  kubectl apply -f config/kube-app-entities/node-load-balancer.yaml
 fi
