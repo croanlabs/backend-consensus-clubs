@@ -54,30 +54,13 @@ exp.getPoll = async pollId => {
 };
 
 /**
- * Insert a poll into the polls table on the relational database and blockchain.
+ * Insert a poll into the polls table.
  *
  */
-exp.createPoll = async question => {
-  const transaction = await sequelize.transaction();
-  const created = await Poll.findOrCreate({
+exp.createPoll = async (question, options) => Poll.findOrCreate({
     where: {question},
-    transaction,
-  })[1];
-  if (!created) {
-    transaction.commit();
-    return;
-  }
-  const options = {authorization: [`${config.eosUsername}@active`]};
-  try {
-    const contract = await eos.contract(config.eosUsername);
-    await contract.newpoll(question, options);
-  } catch (error) {
-    // TODO logger
-    console.log(error);
-    transaction.rollback();
-  }
-  transaction.commit();
-};
+    options,
+  });
 
 /**
  * Insert a poll candidate into the Candidates table.
@@ -87,16 +70,7 @@ exp.createPoll = async question => {
  *  - Insert token for the new candidate into Tokens table
  *
  */
-exp.addCandidate = async (pollId, twitterUser, options) => {
-  let isLocalTransaction = true;
-  let transaction;
-  if (options && options.transaction) {
-    ({ transaction } = options);
-    isLocalTransaction = false;
-  } else {
-    transaction = await sequelize.transaction();
-  }
-  console.log(twitterUser);
+exp.addCandidate = async (pollId, twitterUser, options={}) => {
   const candTwitter = await twitterService.getTwitterUserByIdOrScreenName({
     screenName: twitterUser,
   });
@@ -113,31 +87,10 @@ exp.addCandidate = async (pollId, twitterUser, options) => {
       totalMeritsConfidence: 0,
       totalMeritsOpposition: 0,
     },
-    transaction,
+    ...options,
   });
   if (!created) {
-    transaction.rollback();
     throw new Error('Error: candidate already exists');
-  }
-  try {
-    const contract = await eos.contract(config.eosUsername);
-    const eosOptions = {authorization: [`${config.eosUsername}@active`]};
-    await contract.newcandidate(
-      pollId,
-      candTwitter.name,
-      candTwitter.description,
-      twitterUser,
-      candTwitter.profile_image_url,
-      eosOptions,
-    );
-  } catch (err) {
-    // TODO logger
-    console.log(err);
-    transaction.rolllback();
-    throw new Error('Error: there were problems while inserting the candidate into the blockchain');
-  }
-  if (isLocalTransaction) {
-    transaction.commit();
   }
   return candidate;
 };
@@ -184,21 +137,6 @@ exp.userAddCandidate = async (
     throw err;
   }
   transaction.commit();
-  // const isConfidence = confidence === true ? 1 : 0;
-  // return eos.contract(config.eosUsername).then(contract => {
-  //  const options = {authorization: [`${config.eosUsername}@active`]};
-  //  return contract.newcanduser(
-  //    userId,
-  //    pollId,
-  //    name,
-  //    description,
-  //    twitterUser,
-  //    profilePictureUrl,
-  //    isConfidence,
-  //    commitmentMerits,
-  //    options,
-  //  );
-  // });
 };
 
 /**
