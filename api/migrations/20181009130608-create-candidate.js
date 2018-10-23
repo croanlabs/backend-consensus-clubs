@@ -55,14 +55,6 @@ module.exports = {
       type: Sequelize.DATE,
     },
   },
-  {
-    uniqueKeys: [
-      {
-        name: 'Candidate is unique for a poll',
-        singleField: false,
-        fields: ['pollId', 'twitterUser'],
-      },
-    ],
-  }),
+  {}),
   down: (queryInterface) => queryInterface.dropTable('Candidates'),
 };

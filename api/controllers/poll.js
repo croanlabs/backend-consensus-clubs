@@ -1,14 +1,14 @@
 const pollService = require('../services/poll');
 const auth = require('../middleware/auth');
 
-module.exports.set = (app) => {
+module.exports.set = app => {
   app.get('/polls', (req, res) => {
     pollService
       .getPolls()
-      .then((result) => {
+      .then(result => {
         res.send(result);
       })
-      .catch((err) => {
+      .catch(err => {
         // TODO logger
         console.log(err);
         res.status(500).json({
@@ -20,14 +20,14 @@ module.exports.set = (app) => {
   app.get('/polls/:pollId', (req, res) => {
     pollService
       .getPoll(req.params.pollId)
-      .then((poll) => {
+      .then(poll => {
         if (poll) {
           res.send(poll);
         } else {
           res.status(404).send();
         }
       })
-      .catch((err) => {
+      .catch(err => {
         // TODO logger
         console.log(err);
         res.status(500).json({
@@ -42,7 +42,7 @@ module.exports.set = (app) => {
       .then(() => {
         res.status(200).send();
       })
-      .catch((err) => {
+      .catch(err => {
         // TODO logger
         console.log(err);
         res.status(500).json({
@@ -54,12 +54,7 @@ module.exports.set = (app) => {
   app.post('/polls/:pollId/add-candidate', (req, res) => {
     // TODO enable this endpoint for the admin at some stage.
     res.status(403).send();
-    if (
-      !(
-        req.params.pollId
-        && req.body.twitterUser
-      )
-    ) {
+    if (!(req.params.pollId && req.body.twitterUser)) {
       res.status(500).send('Error: required parameter not set.');
     }
     pollService
@@ -68,12 +63,12 @@ module.exports.set = (app) => {
         req.body.name,
         req.body.description,
         req.body.twitterUser,
-        req.body.profilePictureUrl
+        req.body.profilePictureUrl,
       )
       .then(() => {
         res.status(200).send();
       })
-      .catch((err) => {
+      .catch(err => {
         // TODO logger
         console.log(err);
         res.status(500).json({
@@ -101,7 +96,7 @@ module.exports.set = (app) => {
         .then(() => {
           res.status(200).send();
         })
-        .catch((err) => {
+        .catch(err => {
           // TODO logger
           console.log(err);
           res.status(500).json({
@@ -128,7 +123,7 @@ module.exports.set = (app) => {
         .then(() => {
           res.status(200).send();
         })
-        .catch((err) => {
+        .catch(err => {
           // TODO logger
           console.log(err);
           res.status(500).json({
@@ -139,6 +134,13 @@ module.exports.set = (app) => {
   );
 
   app.post('/polls/:pollId/candidates/:candidateId/redeem', (req, res) => {
+    if (req.body.percentage > 100 || req.body.percentage <= 0) {
+      res
+        .status(400)
+        .send(
+          'Error: percentage must be higher than 0 and lower or equal to 100.',
+        );
+    }
     pollService
       .redeem(
         // FIXME pass user id as first parameter.
@@ -150,7 +152,7 @@ module.exports.set = (app) => {
       .then(() => {
         res.status(200).send();
       })
-      .catch((err) => {
+      .catch(err => {
         // TODO logger
         console.log(err);
         res.status(500).json({

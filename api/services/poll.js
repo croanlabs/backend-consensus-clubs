@@ -1,4 +1,3 @@
-const config = require('../config');
 const {
   Action,
   ActionType,
@@ -9,7 +8,6 @@ const {
   User,
   sequelize,
 } = require('../config/database');
-const eos = require('../config/eos');
 const tokenService = require('./token');
 const twitterService = require('./twitter');
 const userService = require('./user');
@@ -57,7 +55,8 @@ exp.getPoll = async pollId => {
  * Insert a poll into the polls table.
  *
  */
-exp.createPoll = async (question, options) => Poll.findOrCreate({
+exp.createPoll = async (question, options) =>
+  Poll.findOrCreate({
     where: {question},
     options,
   });
@@ -70,7 +69,7 @@ exp.createPoll = async (question, options) => Poll.findOrCreate({
  *  - Insert token for the new candidate into Tokens table
  *
  */
-exp.addCandidate = async (pollId, twitterUser, options={}) => {
+exp.addCandidate = async (pollId, twitterUser, options = {}) => {
   const candTwitter = await twitterService.getTwitterUserByIdOrScreenName({
     screenName: twitterUser,
   });
@@ -292,48 +291,26 @@ exp.createOrUpdateOpinion = async (
 };
 
 /**
- * TODO
- */
-exp.expressOpinionBlockchain = (
-  userId,
-  candidateId,
-  confidence,
-  commitmentMerits,
-) => {
-  const isConfidence = confidence === true ? 1 : 0;
-  return eos.contract(config.eosUsername).then(contract => {
-    const options = {authorization: [`${config.eosUsername}@active`]};
-    return contract.newopinion(
-      userId,
-      candidateId,
-      isConfidence,
-      commitmentMerits,
-      options,
-    );
-  });
-};
-
-/**
  * Redeem benefits. Internally it exchanges tokens for merits.
  *
- * Effects on the blockchain:
- *  - Update token holders for the candidate on table tokens
- *  - Update the token totals on the candidates table
- *  - Update the number of unopinionated merits the user has
- *  - Update/delete opinion on the opinions table
- *  - Add action to actions table
- *
  */
-exp.redeem = (userId, candidateId, confidence, percentage) => {
-  const isConfidence = confidence === true ? 1 : 0;
-  return eos.contract(config.eosUsername).then(contract => {
-    const options = {authorization: [`${config.eosUsername}@active`]};
-    return contract.redeem(
-      userId,
-      candidateId,
-      isConfidence,
-      percentage,
-      options,
-    );
-  });
-};
+// exp.redeem = (userId, candidateId, confidence, percentage) => {
+//   if (percentage > 100 || percentage <= 0) {
+//     throw new Error(
+//       'Error: percentage must be higher than 0 and lower or equal to 100.',
+//     );
+//   }
+//
+//   const transaction = await sequelize.transaction();
+// };
+//
+// /**
+//  * Free candidate tokens by:
+//  *    - updating token totals of candidate's row
+//  *      on table Candidates
+//  *    - updating user's token totals on table TokenHolders
+//  *
+//  */
+// exp.freeTokens = (userId, candidateId, confidence, percentage) {
+//
+// }

@@ -8,18 +8,18 @@ module.exports = (sequelize, DataTypes) => {
         autoIncrement: true,
       },
       userId: {
-        type: DataTypes.INTEGER,
         references: {
           model: 'Users',
           referencesKey: 'id',
         },
+        type: DataTypes.INTEGER,
       },
       candidateId: {
-        type: DataTypes.INTEGER,
         references: {
           model: 'Candidates',
           referencesKey: 'id',
         },
+        type: DataTypes.INTEGER,
       },
       confidence: DataTypes.BOOLEAN,
       tokenAmount: DataTypes.DOUBLE,
