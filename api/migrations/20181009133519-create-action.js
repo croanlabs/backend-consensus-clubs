@@ -32,7 +32,11 @@ module.exports = {
     },
     merits: {
       allowNull: false,
-      type: Sequelize.INTEGER,
+      type: Sequelize.DOUBLE,
+    },
+    tokenAmount: {
+      allowNull: false,
+      type: Sequelize.DOUBLE,
     },
     createdAt: {
       allowNull: false,

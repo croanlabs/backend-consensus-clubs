@@ -22,6 +22,7 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
       confidence: DataTypes.BOOLEAN,
+      merits: DataTypes.DOUBLE,
       tokenAmount: DataTypes.DOUBLE,
       createdAt: DataTypes.DATE,
       updatedAt: DataTypes.DATE,

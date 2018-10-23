@@ -4,7 +4,6 @@ const {
   Candidate,
   Opinion,
   Poll,
-  TokenHolder,
   User,
   sequelize,
 } = require('../config/database');
@@ -142,7 +141,7 @@ exp.userAddCandidate = async (
  * User expresses an opinion about a poll candidate.
  * Internally the user buys candidate's confidence or no-confidence tokens.
  *
- * Effects on the blockchain:
+ * Effects on the database:
  *  - Update token holders for the candidate on table tokens
  *  - Update the token totals on the candidates table
  *  - Update the number of unopinionated merits the user has
@@ -172,35 +171,32 @@ exp.expressOpinion = async (
     await userService.updateUserMerits(userId, -commitmentMerits, {
       transaction,
     });
-    const tokenAmount = await exp.allocateTokens(
+    const tokenAmount = await tokenService.allocateTokens(
       userId,
       candidateId,
       confidence,
       commitmentMerits,
       transaction,
     );
-    await exp.createOrUpdateOpinion(
+    await exp.updateOpinion(
       userId,
       candidateId,
       confidence,
+      commitmentMerits,
       tokenAmount,
       transaction,
     );
 
-    const actionTypeName = confidence ? 'confidence' : 'opposition';
-    const actionType = await ActionType.findOne({
-      where: {name: actionTypeName},
-    });
-    if (!actionType) {
-      transaction.rollback();
-      throw new Error('Error: action types not loaded');
-    }
+    const actionType = await exp.getActionTypeByName(
+      confidence ? 'confidence' : 'opposition',
+    );
     await Action.create(
       {
         userId,
         candidateId,
         actionTypeId: actionType.id,
         merits: commitmentMerits,
+        tokenAmount,
       },
       {transaction},
     );
@@ -216,61 +212,31 @@ exp.expressOpinion = async (
 };
 
 /**
- * Allocate candidate tokens for a user.
+ * Get action type id by name.
  *
  */
-exp.allocateTokens = async (
-  userId,
-  candidateId,
-  confidence,
-  commitmentMerits,
-  transaction,
-) => {
-  // Update candidate
-  const candidate = await Candidate.findById(candidateId, {transaction});
-  const supply = confidence
-    ? candidate.totalTokensConfidence
-    : candidate.totalTokensOpposition;
-  const tokenAmount = tokenService.meritsToTokensBuy(commitmentMerits, supply);
-  if (confidence) {
-    candidate.totalTokensConfidence += tokenAmount;
-    candidate.totalMeritsConfidence += commitmentMerits;
-  } else {
-    candidate.totalTokensOpposition += tokenAmount;
-    candidate.totalMeritsOpposition += commitmentMerits;
-  }
-  await candidate.save({transaction});
-
-  // Update token holders
-  const tokenHolder = await TokenHolder.findOne({
-    where: {userId, candidateId, confidence},
-    lock: transaction.LOCK.UPDATE,
-    transaction,
+exp.getActionTypeByName = async name => {
+  const actionType = await ActionType.findOne({
+    where: {name},
   });
-  if (tokenHolder) {
-    tokenHolder.tokenAmount += tokenAmount;
-    await tokenHolder.save({transaction});
-  } else {
-    await TokenHolder.create(
-      {userId, candidateId, confidence, tokenAmount},
-      {transaction},
-    );
+  if (!actionType) {
+    throw new Error('Error: action types not loaded');
   }
-  return tokenAmount;
+  return actionType;
 };
 
 /**
- * Create or update the opinion of the user about a candidate.
+ * Create, modify or delete user's opinion on a candidate.
  *
- * If the user had already expressed an opinion about a candidate
- * that opinion is updated accumulating the tokens of the new opinion,
- * otherwise it inserts a new opinion.
+ * Parameter tokenAmount is positive if the user is expressing a
+ * new opinion or negative if is redeeming tokens.
  *
  */
-exp.createOrUpdateOpinion = async (
+exp.updateOpinion = async (
   userId,
   candidateId,
   confidence,
+  merits,
   tokenAmount,
   transaction,
 ) => {
@@ -279,38 +245,88 @@ exp.createOrUpdateOpinion = async (
     lock: transaction.LOCK.UPDATE,
     transaction,
   });
-  if (opinion) {
-    opinion.tokenAmount += tokenAmount;
-    await opinion.save({transaction});
-  } else {
+  if (!opinion) {
     await Opinion.create(
-      {userId, candidateId, confidence, tokenAmount},
+      {userId, candidateId, confidence, merits, tokenAmount},
       {transaction},
     );
+    return;
+  }
+  // Opinion exists: update it
+  opinion.tokenAmount += tokenAmount;
+  opinion.merits += merits;
+  if (opinion.tokenAmount !== 0) {
+    await opinion.save({transaction});
+  } else {
+    await opinion.destroy({transaction});
   }
 };
 
 /**
  * Redeem benefits. Internally it exchanges tokens for merits.
  *
+ * Effects on the database:
+ *   - Increment unopinionated merits of the user on table Users
+ *   - Update table TokenHolders to decrease the token amount for the user/candidate
+ *        (or delete it if percentage is 100)
+ *   - Update table Opinions to decrease the token amount
+ *
  */
-// exp.redeem = (userId, candidateId, confidence, percentage) => {
-//   if (percentage > 100 || percentage <= 0) {
-//     throw new Error(
-//       'Error: percentage must be higher than 0 and lower or equal to 100.',
-//     );
-//   }
-//
-//   const transaction = await sequelize.transaction();
-// };
-//
-// /**
-//  * Free candidate tokens by:
-//  *    - updating token totals of candidate's row
-//  *      on table Candidates
-//  *    - updating user's token totals on table TokenHolders
-//  *
-//  */
-// exp.freeTokens = (userId, candidateId, confidence, percentage) {
-//
-// }
+exp.redeem = async (userId, candidateId, confidence, percentage) => {
+  if (percentage > 100 || percentage <= 0) {
+    throw new Error(
+      'Error: percentage must be higher than 0 and lower or equal to 100.',
+    );
+  }
+  const transaction = await sequelize.transaction();
+  try {
+    const candidate = await Candidate.findById(candidateId, {
+      lock: transaction.LOCK.UPDATE,
+      transaction,
+    });
+    const supply = confidence
+      ? candidate.totalTokensConfidence
+      : candidate.totalTokensOpposition;
+
+    // Update token holders
+    const {tokenAmount, merits} = await tokenService.freeTokens(
+      userId,
+      candidateId,
+      confidence,
+      percentage,
+      supply,
+      transaction,
+    );
+
+    // Update opinion
+    await exp.updateOpinion(
+      userId,
+      candidateId,
+      confidence,
+      -merits,
+      -tokenAmount,
+      transaction,
+    );
+
+    // Create action
+    const actionType = await exp.getActionTypeByName('redemption');
+    await Action.create(
+      {userId, candidateId, actionTypeId: actionType.id, merits, tokenAmount},
+      {transaction},
+    );
+
+    // Update user
+    const user = await User.findById(userId, {
+      lock: transaction.LOCK.UPDATE,
+      transaction,
+    });
+    user.unopinionatedMerits += merits;
+    await user.save({transaction});
+  } catch (err) {
+    // TODO logger
+    console.log(err);
+    transaction.rollback();
+    throw new Error('Error redeeming benefits');
+  }
+  transaction.commit();
+};

@@ -28,6 +28,10 @@ module.exports = {
         allowNull: false,
         type: Sequelize.BOOLEAN,
       },
+      merits: {
+        allowNull: false,
+        type: Sequelize.DOUBLE,
+      },
       tokenAmount: {
         allowNull: false,
         type: Sequelize.DOUBLE,
@@ -41,15 +45,7 @@ module.exports = {
         type: Sequelize.DATE,
       },
     },
-    {
-      uniqueKeys: [
-        {
-          name: 'Unique opinion for user-candidate',
-          singleField: false,
-          fields: ['userId', 'candidateId'],
-        },
-      ],
-    },
+    {},
   ),
   down: (queryInterface) => queryInterface.dropTable('Opinions'),
 };

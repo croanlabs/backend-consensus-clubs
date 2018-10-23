@@ -133,7 +133,9 @@ module.exports.set = app => {
     },
   );
 
-  app.post('/polls/:pollId/candidates/:candidateId/redeem', (req, res) => {
+  app.post('/polls/:pollId/candidates/:candidateId/redeem',
+    auth.authenticate,
+    (req, res) => {
     if (req.body.percentage > 100 || req.body.percentage <= 0) {
       res
         .status(400)
@@ -143,8 +145,7 @@ module.exports.set = app => {
     }
     pollService
       .redeem(
-        // FIXME pass user id as first parameter.
-        0,
+        req.auth.id,
         req.params.candidateId,
         req.body.confidence,
         req.body.percentage,
