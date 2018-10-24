@@ -178,7 +178,7 @@ exp.expressOpinion = async (
       commitmentMerits,
       transaction,
     );
-    await exp.updateOpinion(
+    await exp.updateOpinionForExpression(
       userId,
       candidateId,
       confidence,
@@ -226,13 +226,10 @@ exp.getActionTypeByName = async name => {
 };
 
 /**
- * Create, modify or delete user's opinion on a candidate.
- *
- * Parameter tokenAmount is positive if the user is expressing a
- * new opinion or negative if is redeeming tokens.
+ * Create or modify user's opinion on a candidate.
  *
  */
-exp.updateOpinion = async (
+exp.updateOpinionForExpression = async (
   userId,
   candidateId,
   confidence,
@@ -263,7 +260,40 @@ exp.updateOpinion = async (
 };
 
 /**
- * Redeem benefits. Internally it exchanges tokens for merits.
+ * Modify or delete user's opinion on a candidate. Related to token
+ * redemption.
+ *
+ */
+exp.updateOpinionForRedemption = async (
+  userId,
+  candidateId,
+  confidence,
+  tokenAmount,
+  percentageRedeemedMerits,
+  transaction,
+) => {
+  const opinion = await Opinion.findOne({
+    where: {userId, candidateId},
+    lock: transaction.LOCK.UPDATE,
+    transaction,
+  });
+  if (!opinion) {
+    throw new Error(
+      `Opinion not found for user ${userId} candidate ${candidateId} and confidence ${confidence}`,
+    );
+  }
+  opinion.tokenAmount -= tokenAmount;
+  opinion.merits -= (opinion.merits * percentageRedeemedMerits) / 100;
+  if (opinion.tokenAmount !== 0) {
+    await opinion.save({transaction});
+  } else {
+    await opinion.destroy({transaction});
+  }
+};
+
+/**
+ * Redeem a percentage of tokens for a candidate.
+ * Internally it exchanges tokens for merits.
  *
  * Effects on the database:
  *   - Increment unopinionated merits of the user on table Users
@@ -288,8 +318,12 @@ exp.redeem = async (userId, candidateId, confidence, percentage) => {
       ? candidate.totalTokensConfidence
       : candidate.totalTokensOpposition;
 
-    // Update token holders
-    const {tokenAmount, merits} = await tokenService.freeTokens(
+    // Update candidate and token holder
+    const {
+      tokenAmount,
+      redeemedMerits,
+      percentageRedeemedMerits,
+    } = await tokenService.freeTokens(
       userId,
       candidateId,
       confidence,
@@ -299,19 +333,19 @@ exp.redeem = async (userId, candidateId, confidence, percentage) => {
     );
 
     // Update opinion
-    await exp.updateOpinion(
+    await exp.updateOpinionForRedemption(
       userId,
       candidateId,
       confidence,
-      -merits,
-      -tokenAmount,
+      tokenAmount,
+      percentageRedeemedMerits,
       transaction,
     );
 
     // Create action
     const actionType = await exp.getActionTypeByName('redemption');
     await Action.create(
-      {userId, candidateId, actionTypeId: actionType.id, merits, tokenAmount},
+      {userId, candidateId, actionTypeId: actionType.id, merits: redeemedMerits, tokenAmount},
       {transaction},
     );
 
@@ -320,7 +354,7 @@ exp.redeem = async (userId, candidateId, confidence, percentage) => {
       lock: transaction.LOCK.UPDATE,
       transaction,
     });
-    user.unopinionatedMerits += merits;
+    user.unopinionatedMerits += redeemedMerits;
     await user.save({transaction});
   } catch (err) {
     // TODO logger

@@ -77,7 +77,7 @@ exp.allocateTokens = async (
 };
 
 /**
- * Free candidate tokens by:
+ * Free a percentage of the candidate tokens a user holds by:
  *    - updating token totals of candidate's row on table Candidates
  *    - updating user's token totals on table TokenHolders
  *      (or deleting the row if percentage is 100%)
@@ -98,6 +98,8 @@ exp.freeTokens = async (
     transaction,
   });
   const tokenAmount = (tokenHolder.tokenAmount * percentage) / 100;
+  const totalAvailableMerits = exp.tokensToMeritsRedeem(tokenHolder.tokenAmount, supply);
+
   if (percentage === 100) {
     await tokenHolder.destroy({transaction});
   } else {
@@ -110,15 +112,22 @@ exp.freeTokens = async (
     lock: transaction.LOCK.UPDATE,
     transaction,
   });
-  const merits = exp.tokensToMeritsRedeem(tokenAmount, supply);
+  const redeemedMerits = exp.tokensToMeritsRedeem(tokenAmount, supply);
   if (confidence) {
     candidate.totalTokensConfidence -= tokenAmount;
-    candidate.totalMeritsConfidence -= merits;
+    candidate.totalMeritsConfidence -= redeemedMerits;
   } else {
     candidate.totalTokensOpposition -= tokenAmount;
-    candidate.totalMeritsOpposition -= merits;
+    candidate.totalMeritsOpposition -= redeemedMerits;
   }
   candidate.save({transaction});
 
-  return {tokenAmount, merits};
+  // Calculate the percentage of redeemed merits
+  //
+  // This percentage is not the same as the token percentage because
+  // a bonding curve is used to calculate the value of the tokens which
+  // consequently is not constant (depends on the supply).
+  const percentageRedeemedMerits = redeemedMerits * 100 / totalAvailableMerits;
+
+  return {tokenAmount, redeemedMerits, percentageRedeemedMerits};
 };
