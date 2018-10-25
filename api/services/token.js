@@ -11,7 +11,8 @@ const aBondingCurve = 0.25;
 exp.tokenPrice = supply => supply * aBondingCurve;
 
 /**
- * Convert merits to tokens.
+ * Convert merits to tokens for when the user is buying candidate
+ * tokens (expressing opinion on a candidate).
  *
  */
 exp.meritsToTokensBuy = (merits, supply) => {
@@ -22,13 +23,37 @@ exp.meritsToTokensBuy = (merits, supply) => {
 };
 
 /**
- * Convert tokens to merits.
+ * Convert merits to tokens for when the user is redeeming an already
+ * expressed opinion.
+ *
+ * When users redeem opinions they can either exchange 100% of their tokens
+ * or select the number of merits they want to get for the redemption.
+ * For the second case (called opinion modification) the equivalent in
+ * tokens for the selected number of merits has to be calculated and that
+ * is what this function does.
+ *
+ */
+exp.meritsToTokensRedeem = (merits, supply) => {
+  const newSupply = Math.sqrt(
+    (supply * exp.tokenPrice(supply) - 2 * merits) / aBondingCurve,
+  );
+  return supply - newSupply;
+};
+
+/**
+ * Convert tokens to merits for when the user is redeeming an already
+ * expressed opinion.
+ *
+ * Returns the number of merits a user would get by selling (redeeming)
+ * candidate tokens.
  *
  */
 exp.tokensToMeritsRedeem = (tokenAmount, supply) => {
   const supplyAfter = supply - tokenAmount;
   return (
-    (supply * exp.tokenPrice(supply) - supplyAfter * exp.tokenPrice(supplyAfter)) / 2
+    (supply * exp.tokenPrice(supply) -
+      supplyAfter * exp.tokenPrice(supplyAfter)) /
+    2
   );
 };
 
@@ -98,7 +123,10 @@ exp.freeTokens = async (
     transaction,
   });
   const tokenAmount = (tokenHolder.tokenAmount * percentage) / 100;
-  const totalAvailableMerits = exp.tokensToMeritsRedeem(tokenHolder.tokenAmount, supply);
+  const totalAvailableMerits = exp.tokensToMeritsRedeem(
+    tokenHolder.tokenAmount,
+    supply,
+  );
 
   if (percentage === 100) {
     await tokenHolder.destroy({transaction});
@@ -123,11 +151,11 @@ exp.freeTokens = async (
   candidate.save({transaction});
 
   // Calculate the percentage of redeemed merits
-  //
   // This percentage is not the same as the token percentage because
   // a bonding curve is used to calculate the value of the tokens which
   // consequently is not constant (depends on the supply).
-  const percentageRedeemedMerits = redeemedMerits * 100 / totalAvailableMerits;
+  const percentageRedeemedMerits =
+    (redeemedMerits * 100) / totalAvailableMerits;
 
   return {tokenAmount, redeemedMerits, percentageRedeemedMerits};
 };

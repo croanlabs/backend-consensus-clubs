@@ -5,6 +5,7 @@ const {
   Opinion,
   Poll,
   User,
+  TokenHolder,
   sequelize,
 } = require('../config/database');
 const tokenService = require('./token');
@@ -134,7 +135,7 @@ exp.userAddCandidate = async (
     transaction.rollback();
     throw err;
   }
-  transaction.commit();
+  await transaction.commit();
 };
 
 /**
@@ -201,11 +202,13 @@ exp.expressOpinion = async (
       {transaction},
     );
     if (isLocalTransaction) {
-      transaction.commit();
+      await transaction.commit();
     }
   } catch (err) {
     if (isLocalTransaction) {
-      transaction.rollback();
+      // TODO logger
+      console.log(err);
+      await transaction.rollback();
     }
     throw err;
   }
@@ -292,6 +295,134 @@ exp.updateOpinionForRedemption = async (
 };
 
 /**
+ * Get candidate along with its token supply for confidence/opposition
+ * locking the row for update.
+ *
+ */
+exp.getCandidateAndSupplyLock = async (
+  candidateId,
+  confidence,
+  transaction,
+) => {
+  const candidate = await Candidate.findById(candidateId, {
+    lock: transaction.LOCK.UPDATE,
+    transaction,
+  });
+  const supply = confidence
+    ? candidate.totalTokensConfidence
+    : candidate.totalTokensOpposition;
+  return {candidate, supply};
+};
+
+/**
+ * Withdraw opinion on a candidate.
+ *
+ */
+exp.withdraw = async (userId, candidateId, confidence) => {
+  const transaction = await sequelize.transaction();
+  try {
+    await exp.redeemFromPercentage(userId, candidateId, confidence, 100, transaction);
+  } catch (err) {
+    // TODO logger
+    console.log(err);
+    await transaction.rollback();
+    throw new Error('Error withdrowing opinion');
+  }
+  await transaction.commit();
+};
+
+/**
+ * Modify user's opinion on a candidate.
+ *
+ */
+exp.modifyOpinion = async (
+  userId,
+  candidateId,
+  confidence,
+  commitmentMerits,
+) => {
+  const transaction = await sequelize.transaction();
+  const tokenHolder = await TokenHolder.findOne({
+    where: {userId, candidateId, confidence},
+    lock: transaction.LOCK.UPDATE,
+    transaction,
+  });
+  const {supply} = await exp.getCandidateAndSupplyLock(
+    candidateId,
+    confidence,
+    transaction,
+  );
+  const currentValueMerits = tokenService.tokensToMeritsRedeem(
+    tokenHolder.tokenAmount,
+    supply,
+  );
+  try {
+    if (currentValueMerits > commitmentMerits) {
+      const redemptionMerits = currentValueMerits - commitmentMerits;
+      await exp.redeemFromMerits(
+        userId,
+        candidateId,
+        confidence,
+        redemptionMerits,
+        transaction);
+    } else {
+      const newOpinionMerits = commitmentMerits - currentValueMerits;
+      await exp.expressOpinion(
+        userId,
+        candidateId,
+        confidence,
+        newOpinionMerits,
+        {
+          transaction,
+        },
+      );
+    }
+  } catch (err) {
+    // TODO logger
+    console.log(err);
+    await transaction.rollback();
+    throw new Error('Error trying to modify opinion');
+  }
+  await transaction.commit();
+};
+
+/**
+ * Redeem candidate's tokens the user holds and get the number of merits
+ * passed as parameter.
+ *
+ */
+exp.redeemFromMerits = async (
+  userId,
+  candidateId,
+  confidence,
+  merits,
+  transaction,
+) => {
+  const {supply} = await exp.getCandidateAndSupplyLock(
+    candidateId,
+    confidence,
+    transaction,
+  );
+  const tokenAmount = tokenService.meritsToTokensRedeem(merits, supply);
+  const tokenHolder = await TokenHolder.findOne({
+    where: {userId, candidateId, confidence},
+    transaction,
+    lock: transaction.LOCK.UPDATE,
+  });
+  if (tokenHolder.tokenAmount < tokenAmount) {
+    throw new Error('Not enough merits to express opinion');
+  }
+  const percentage = (tokenAmount / tokenHolder.tokenAmount) * 100;
+  await exp.redeemFromPercentage(
+    userId,
+    candidateId,
+    confidence,
+    percentage,
+    transaction,
+  );
+};
+
+/**
  * Redeem a percentage of tokens for a candidate.
  * Internally it exchanges tokens for merits.
  *
@@ -302,65 +433,66 @@ exp.updateOpinionForRedemption = async (
  *   - Update table Opinions to decrease the token amount
  *
  */
-exp.redeem = async (userId, candidateId, confidence, percentage) => {
+exp.redeemFromPercentage = async (
+  userId,
+  candidateId,
+  confidence,
+  percentage,
+  transaction,
+) => {
   if (percentage > 100 || percentage <= 0) {
     throw new Error(
       'Error: percentage must be higher than 0 and lower or equal to 100.',
     );
   }
-  const transaction = await sequelize.transaction();
-  try {
-    const candidate = await Candidate.findById(candidateId, {
-      lock: transaction.LOCK.UPDATE,
-      transaction,
-    });
-    const supply = confidence
-      ? candidate.totalTokensConfidence
-      : candidate.totalTokensOpposition;
+  const {supply} = await exp.getCandidateAndSupplyLock(
+    candidateId,
+    confidence,
+    transaction,
+  );
 
-    // Update candidate and token holder
-    const {
-      tokenAmount,
-      redeemedMerits,
-      percentageRedeemedMerits,
-    } = await tokenService.freeTokens(
+  // Update candidate and token holder
+  const {
+    tokenAmount,
+    redeemedMerits,
+    percentageRedeemedMerits,
+  } = await tokenService.freeTokens(
+    userId,
+    candidateId,
+    confidence,
+    percentage,
+    supply,
+    transaction,
+  );
+
+  // Update opinion
+  await exp.updateOpinionForRedemption(
+    userId,
+    candidateId,
+    confidence,
+    tokenAmount,
+    percentageRedeemedMerits,
+    transaction,
+  );
+
+  // Create action
+  const actionType = await exp.getActionTypeByName('redemption');
+  await Action.create(
+    {
       userId,
       candidateId,
-      confidence,
-      percentage,
-      supply,
-      transaction,
-    );
-
-    // Update opinion
-    await exp.updateOpinionForRedemption(
-      userId,
-      candidateId,
-      confidence,
+      actionTypeId: actionType.id,
+      merits: redeemedMerits,
       tokenAmount,
-      percentageRedeemedMerits,
-      transaction,
-    );
+    },
+    {transaction},
+  );
 
-    // Create action
-    const actionType = await exp.getActionTypeByName('redemption');
-    await Action.create(
-      {userId, candidateId, actionTypeId: actionType.id, merits: redeemedMerits, tokenAmount},
-      {transaction},
-    );
-
-    // Update user
-    const user = await User.findById(userId, {
-      lock: transaction.LOCK.UPDATE,
-      transaction,
-    });
-    user.unopinionatedMerits += redeemedMerits;
-    await user.save({transaction});
-  } catch (err) {
-    // TODO logger
-    console.log(err);
-    transaction.rollback();
-    throw new Error('Error redeeming benefits');
-  }
-  transaction.commit();
+  // Update user
+  const user = await User.findById(userId, {
+    lock: transaction.LOCK.UPDATE,
+    transaction,
+  });
+  user.unopinionatedMerits += redeemedMerits;
+  await user.save({transaction});
 };

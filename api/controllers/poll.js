@@ -133,32 +133,46 @@ module.exports.set = app => {
     },
   );
 
-  app.post('/polls/:pollId/candidates/:candidateId/redeem',
+  app.post('/polls/:pollId/candidates/:candidateId/modify',
     auth.authenticate,
     (req, res) => {
-    if (req.body.percentage > 100 || req.body.percentage <= 0) {
-      res
-        .status(400)
-        .send(
-          'Error: percentage must be higher than 0 and lower or equal to 100.',
-        );
-    }
-    pollService
-      .redeem(
-        req.auth.id,
-        req.params.candidateId,
-        req.body.confidence,
-        req.body.percentage,
-      )
-      .then(() => {
-        res.status(200).send();
-      })
-      .catch(err => {
-        // TODO logger
-        console.log(err);
-        res.status(500).json({
-          error: 'Error redeeming benefits',
+      pollService
+        .modifyOpinion(
+          req.auth.id,
+          req.params.candidateId,
+          req.body.confidence,
+          req.body.commitmentMerits,
+        )
+        .then(() => {
+          res.status(200).send();
+        })
+        .catch(err => {
+          // TODO logger
+          console.log(err);
+          res.status(500).json({
+            error: 'Error redeeming benefits',
+          });
         });
-      });
   });
+
+  app.post('/polls/:pollId/candidates/:candidateId/withdraw',
+    auth.authenticate,
+    (req, res) => {
+      pollService
+        .withdraw(
+          req.auth.id,
+          req.params.candidateId,
+          req.body.confidence,
+        )
+        .then(() => {
+          res.status(200).send();
+        })
+        .catch(err => {
+          // TODO logger
+          console.log(err);
+          res.status(500).json({
+            error: 'Error redeeming benefits',
+          });
+        });
+    });
 };
