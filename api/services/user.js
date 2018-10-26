@@ -1,6 +1,5 @@
 const config = require('../config');
 const eos = require('../config/eos');
-const eosService = require('./eos');
 const {Candidate, Opinion, User, sequelize} = require('../config/database');
 
 const exp = module.exports;
@@ -43,6 +42,8 @@ exp.findOrCreate = (username, externalInfo) =>
       }),
   );
 
+exp.getById = (id) => User.findById(id)
+
 /**
  * Update the number of unopinionated merits the user has.
  *
@@ -60,10 +61,10 @@ exp.updateUserMerits = async (userId, merits, options) => {
   }
   const user = await User.findById(userId, optionsUpdate);
   if (!user) {
-    throw 'Error updating merits: user not found';
+    throw new Error('Error updating merits: user not found');
   }
   if (user.unopinionatedMerits <= merits) {
-    throw 'Error: insufficient merits';
+    throw Error('Error: insufficient merits');
   }
   user.unopinionatedMerits += merits;
   user.save(optionsUpdate);
@@ -96,8 +97,7 @@ exp.newReferral = referredBy =>
  * on the blockchain.
  *
  */
-exp.getUserOpinions = (userId, options = {}) => {
-  return Opinion.findAll({
+exp.getUserOpinions = (userId) => Opinion.findAll({
     where: {userId},
     include: [
       {
@@ -107,4 +107,3 @@ exp.getUserOpinions = (userId, options = {}) => {
       },
     ],
   });
-};
