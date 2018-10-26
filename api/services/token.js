@@ -81,6 +81,9 @@ exp.allocateTokens = async (
     candidate.totalTokensOpposition += tokenAmount;
     candidate.totalMeritsOpposition += commitmentMerits;
   }
+  candidate.netTokenAmount =
+    candidate.totalTokensConfidence -
+    candidate.totalTokensOpposition;
   await candidate.save({transaction});
 
   // Update token holders
@@ -148,6 +151,9 @@ exp.freeTokens = async (
     candidate.totalTokensOpposition -= tokenAmount;
     candidate.totalMeritsOpposition -= redeemedMerits;
   }
+  candidate.netTokenAmount =
+    candidate.totalTokensConfidence -
+    candidate.totalTokensOpposition;
   candidate.save({transaction});
 
   // Calculate the percentage of redeemed merits

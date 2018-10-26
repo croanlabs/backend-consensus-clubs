@@ -18,6 +18,7 @@ module.exports = (sequelize, DataTypes) => {
       description: DataTypes.STRING,
       twitterUser: DataTypes.STRING,
       profilePictureUrl: DataTypes.STRING,
+      netTokenAmount: DataTypes.DOUBLE,
       totalTokensConfidence: DataTypes.DOUBLE,
       totalTokensOpposition: DataTypes.DOUBLE,
       totalMeritsConfidence: DataTypes.INTEGER,

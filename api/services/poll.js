@@ -22,11 +22,12 @@ exp.getPolls = async () => {
   const res = await Poll.findAll({
     include: [
       {
-        model: Candidate,
         as: 'candidates',
+        model: Candidate,
         required: false,
       },
     ],
+    order: [[{model: Candidate, as: 'candidates'}, 'netTokenAmount', 'desc']],
   });
   return res;
 };
@@ -81,6 +82,7 @@ exp.addCandidate = async (pollId, twitterUser, options = {}) => {
       description: candTwitter.description,
       twitterUser,
       profilePictureUrl: candTwitter.profile_image_url,
+      netTokenAmount: 0,
       totalTokensConfidence: 0,
       totalTokensOpposition: 0,
       totalMeritsConfidence: 0,
@@ -321,7 +323,13 @@ exp.getCandidateAndSupplyLock = async (
 exp.withdraw = async (userId, candidateId, confidence) => {
   const transaction = await sequelize.transaction();
   try {
-    await exp.redeemFromPercentage(userId, candidateId, confidence, 100, transaction);
+    await exp.redeemFromPercentage(
+      userId,
+      candidateId,
+      confidence,
+      100,
+      transaction,
+    );
   } catch (err) {
     // TODO logger
     console.log(err);
@@ -364,7 +372,8 @@ exp.modifyOpinion = async (
         candidateId,
         confidence,
         redemptionMerits,
-        transaction);
+        transaction,
+      );
     } else {
       const newOpinionMerits = commitmentMerits - currentValueMerits;
       await exp.expressOpinion(

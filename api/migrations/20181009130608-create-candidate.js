@@ -30,6 +30,10 @@ module.exports = {
       allowNull: false,
       type: Sequelize.STRING,
     },
+    netTokenAmount: {
+      allowNull: false,
+      type: Sequelize.DOUBLE,
+    },
     totalTokensConfidence: {
       allowNull: false,
       type: Sequelize.DOUBLE,
@@ -55,6 +59,6 @@ module.exports = {
       type: Sequelize.DATE,
     },
   },
-  {}),
+  {}).then(() => queryInterface.addIndex('Candidates', ['netTokenAmount'])),
   down: (queryInterface) => queryInterface.dropTable('Candidates'),
 };
