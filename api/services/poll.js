@@ -27,7 +27,7 @@ exp.getPolls = async () => {
         required: false,
       },
     ],
-    order: [[{model: Candidate, as: 'candidates'}, 'netTokenAmount', 'desc']],
+    order: ['id', [{model: Candidate, as: 'candidates'}, 'netTokenAmount', 'desc']],
   });
   return res;
 };
@@ -56,11 +56,13 @@ exp.getPoll = async pollId => {
  * Insert a poll into the polls table.
  *
  */
-exp.createPoll = async (question, options) =>
-  Poll.findOrCreate({
+exp.createPoll = async (question, options={}) => {
+  const res = await Poll.findOrCreate({
     where: {question},
     options,
   });
+  return res[0];
+};
 
 /**
  * Insert a poll candidate into the Candidates table.
@@ -120,8 +122,9 @@ exp.userAddCandidate = async (
     throw new Error('Error: insufficient merits');
   }
   const transaction = await sequelize.transaction();
+  let candidate;
   try {
-    const candidate = await exp.addCandidate(pollId, twitterUser, {
+    candidate = await exp.addCandidate(pollId, twitterUser, {
       transaction,
     });
     await exp.expressOpinion(
@@ -138,6 +141,7 @@ exp.userAddCandidate = async (
     throw err;
   }
   await transaction.commit();
+  return candidate;
 };
 
 /**

@@ -1,226 +1,253 @@
 const assert = require('assert');
-const eosService = require('../services/eos');
 const pollService = require('../services/poll');
 const tokenService = require('../services/token');
-const userService = require('../services/user');
-const utils = require('../utils');
+const {
+  Action,
+  Candidate,
+  Opinion,
+  Poll,
+  TokenHolder,
+  User,
+  sequelize,
+} = require('../config/database');
 
-describe('services.poll', () => {
-  it('Create a poll on the blockchain', done => {
-    pollService
-      .createPoll('Test question', 'Test description')
-      .then(() => {
-        assert(true, 'Poll created successfully');
-      })
+describe('services.poll', async () => {
+  it('Create a poll', async () => {
+    const time = +new Date();
+    const {dataValues: poll} = await pollService
+      .createPoll(`Test question ${time}`)
       .catch(err => {
         assert.fail(err);
-      })
-      .then(() => done());
+      });
+    await Poll.destroy({where: {id: poll.id}});
+    assert(true);
   });
 
-  it('Get a poll from the blockchain by its id', done => {
-    pollService
-      .getPoll(0)
-      .then(poll => {
-        if (
-          poll &&
-          poll.question == 'Who are the most insightful crypto investors?' &&
-          poll.description == 'Best investor in crypto.'
-        ) {
-          assert(true, 'Poll was retrieved successfully ');
-        } else {
-          assert.fail('Wrong poll data was retrieved');
-        }
-      })
-      .catch(err => {
-        assert.fail(err);
-      })
-      .then(() => done());
+  it('Get a poll by its id', async () => {
+    const poll = await pollService.getPoll(1);
+    if (
+      poll &&
+      poll.question === 'Who are the most insightful crypto investors?'
+    ) {
+      assert(true);
+    } else {
+      assert.fail('Wrong poll data was retrieved');
+    }
   });
 
-  it('Get polls from the blockchain', done => {
-    pollService
-      .getPolls()
-      .then(polls => {
-        const maxInd = polls.length - 1;
-        if (
-          polls.length &&
-          polls[maxInd].question == 'Test question' &&
-          polls[maxInd].description == 'Test description'
-        ) {
-          assert(true, 'Polls were retrieved successfully');
-        } else {
-          assert(false, 'No polls were retrieved');
-        }
-      })
-      .catch(err => {
-        assert.fail(err);
-      })
-      .then(() => done());
+  it('Get all polls', async () => {
+    await pollService.createPoll('Test question');
+    const polls = await pollService.getPolls();
+    const poll = polls.slice(-1)[0];
+    if (poll.question === 'Test question') {
+      assert(true, 'Polls were retrieved successfully');
+    } else {
+      assert(false);
+    }
   });
 
-  it('Create new poll candidate on the blockchain', done => {
-    let id = +new Date();
-    pollService
-      .addCandidate(
-        0,
-        `Test candidate${id}`,
-        'Test candidate description',
-        `@test${id}`,
-      )
-      .then(() => {
-        assert(true);
-      })
-      .catch(err => {
-        assert.fail(err);
-      })
-      .then(() => done());
+  it('Create new poll candidate', async () => {
+    const candidate = await pollService.addCandidate(1, 'consensusclubs');
+    if (
+      candidate.id &&
+      candidate.pollId === 1 &&
+      candidate.netTokenAmount === 0 &&
+      candidate.totalTokensConfidence === 0 &&
+      candidate.totalTokensOpposition === 0 &&
+      candidate.totalMeritsConfidence === 0 &&
+      candidate.totalMeritsOpposition === 0
+    ) {
+      assert(true);
+    } else {
+      assert(false);
+    }
+    await Action.destroy({where: {}});
+    await Opinion.destroy({where: {}});
+    await TokenHolder.destroy({where: {}});
+    await candidate.destroy();
   });
 
   it('Create new poll candidate proposed by a user and verify that merits are consumed', async () => {
-    const userBefore = await eosService.getRowById('users', 0);
-    let id = +new Date();
-    await pollService.userAddCandidate(
-      0, // User id
-      0, // Poll id
-      `Test user candidate ${id}`,
-      'Test user candidate description',
-      `@test_candidate${id}`,
-      1, // confidence
-      20, // number of merits
-    );
-    const userAfter = await eosService.getRowById('users', 0);
-    assert.equal(
-      userAfter['unopinionated_merits'],
-      userBefore['unopinionated_merits'] - 20,
-    );
-  });
-
-  it('User expresses opinion and merits are consumed', async () => {
-    const userBefore = await eosService.getRowById('users', 0);
-    await pollService.expressOpinion(
-      0, // user id
-      0, // candidate id
+    const time = +new Date();
+    const {dataValues: userBefore} = await User.create({
+      username: `user${time}`,
+      unopinionatedMerits: 100,
+      externalInfo: '',
+    });
+    const candidate = await pollService.userAddCandidate(
+      userBefore.id, // User id
+      1, // Poll id
+      'consensusclubs',
       true, // confidence
       20, // number of merits
     );
-    const userAfter = await eosService.getRowById('users', 0);
+    const userAfter = await User.findById(userBefore.id);
     assert.equal(
-      userAfter['unopinionated_merits'],
-      userBefore['unopinionated_merits'] - 20,
+      userAfter.unopinionatedMerits,
+      userBefore.unopinionatedMerits - 20,
     );
+    await Action.destroy({where: {}});
+    await Opinion.destroy({where: {}});
+    await TokenHolder.destroy({where: {}});
+    await candidate.destroy();
   });
 
-  it('User express opinion and tokens are generated', async () => {
-    const candidateBefore = await eosService.getRowById('candidates', 2);
-    const tokenAmount = tokenService.meritsToTokens(
+  it('User expresses opinion and merits are consumed', async () => {
+    const time = +new Date();
+    const {dataValues: userBefore} = await User.create({
+      username: `user${time}`,
+      unopinionatedMerits: 100,
+      externalInfo: '',
+    });
+    await pollService.expressOpinion(
+      userBefore.id, // user id
+      1, // candidate id
+      true, // confidence
+      20, // number of merits
+    );
+    const userAfter = await User.findById(userBefore.id);
+    assert.equal(
+      userAfter.unopinionatedMerits,
+      userBefore.unopinionatedMerits - 20,
+    );
+    await Action.destroy({where: {}});
+    await Opinion.destroy({where: {}});
+    await TokenHolder.destroy({where: {}});
+    await userAfter.destroy();
+  });
+
+  it('User expresses opinion and tokens are generated', async () => {
+    const time = +new Date();
+    const candidateBefore = await Candidate.findById(2);
+    const user = await User.create({
+      username: `user${time}`,
+      unopinionatedMerits: 100,
+      externalInfo: '',
+    });
+    const tokenAmount = tokenService.meritsToTokensBuy(
       50,
-      candidateBefore['total_tokens_confidence'],
+      candidateBefore.totalTokensConfidence,
     );
     await pollService.expressOpinion(
-      0, // user id
+      user.dataValues.id, // user id
       2, // candidate id
       true, // confidence
       50, // number of merits
     );
-    const candidateAfter = await eosService.getRowById('candidates', 2);
+    const candidateAfter = await Candidate.findById(2);
     assert.equal(
-      Number(candidateAfter['total_tokens_confidence']),
-      Number(candidateBefore['total_tokens_confidence']) + tokenAmount,
+      candidateAfter.totalTokensConfidence.toFixed(4),
+      (candidateBefore.totalTokensConfidence + tokenAmount).toFixed(4),
     );
+    await Action.destroy({where: {}});
+    await Opinion.destroy({where: {}});
+    await TokenHolder.destroy({where: {}});
+    await user.destroy();
   });
 
   it('User emits an opinion and then redeems it. Unopinionated merits should remain the same', async () => {
-    await utils.sleep(500);
-    // Clean all the previous opinions of the user on the target candidate.
-    await pollService.redeem(
-      0, // user id
-      0, // candidate id
-      true, // confidence
-      100, // percentage
-    );
-    const userBefore = await eosService.getRowById('users', 0);
+    const time = +new Date();
+    const {dataValues: userBefore} = await User.create({
+      username: `user${time}`,
+      unopinionatedMerits: 100,
+      externalInfo: '',
+    });
     await pollService.expressOpinion(
-      0, // user id
-      0, // candidate id
+      userBefore.id, // user id
+      1, // candidate id
       true, // confidence
-      20, // number of merits
+      75, // number of merits
     );
-    await utils.sleep(500);
-    await pollService.redeem(
-      0, // user id
-      0, // candidate id
+    await pollService.withdraw(
+      userBefore.id, // user id
+      1, // candidate id
       true, // confidence
-      100, // percentage
     );
-    const userAfter = await eosService.getRowById('users', 0);
-    assert.equal(
-      userAfter['unopinionated_merits'],
-      userBefore['unopinionated_merits'],
-    );
+    const userAfter = await User.findById(userBefore.id);
+    assert.equal(userAfter.unopinionatedMerits.toFixed(5), userBefore.unopinionatedMerits.toFixed(5));
+    await Action.destroy({where: {}});
+    await Opinion.destroy({where: {}});
+    await userAfter.destroy();
   });
 
   it('User emits an opinion and then redeems it. Candidate tokens should remain the same', async () => {
-    await utils.sleep(500);
-    // Clean all the previous opinions of the user on the target candidate.
-    await pollService.redeem(
-      0, // user id
-      0, // candidate id
-      false, // confidence
-      100, // percentage
-    );
-    const candidateBefore = await eosService.getRowById('candidates', 0);
+    const time = +new Date();
+    const user = await User.create({
+      username: `user${time}`,
+      unopinionatedMerits: 100,
+      externalInfo: '',
+    });
+    const candidateBefore = await Candidate.findById(3);
     await pollService.expressOpinion(
-      0, // user id
-      0, // candidate id
+      user.dataValues.id, // user id
+      3, // candidate id
       false, // confidence
       20, // number of merits
     );
-    await utils.sleep(500);
-    await pollService.redeem(
-      0, // user id
-      0, // candidate id
+    await pollService.withdraw(
+      user.dataValues.id, // user id
+      3, // candidate id
       false, // confidence
-      100, // percentage
     );
-    const candidateAfter = await eosService.getRowById('candidates', 0);
-    assert.equal(
-      candidateAfter['total_tokens_no_confidence'],
-      candidateBefore['total_tokens_no_confidence'],
+    const candidateAfter = await Candidate.findById(3);
+    assert(
+      candidateAfter.totalTokensOpposition ===
+        candidateBefore.totalTokensOpposition &&
+        candidateAfter.totalTokensConfidence ===
+          candidateBefore.totalTokensConfidence &&
+        candidateAfter.totalMeritsConfidence ===
+          candidateBefore.totalTokensConfidence &&
+        candidateAfter.totalMeritsOpposition ===
+          candidateBefore.totalTokensOpposition,
     );
+    await Action.destroy({where: {}});
+    await Opinion.destroy({where: {}});
+    user.destroy();
   });
 
   it('User emits an opinion and then redeems 50% of it. Unopinionated merits should be updated', async () => {
-    await utils.sleep(500);
-    // Clean all the previous opinions of the user on the target candidate.
-    await pollService.redeem(
-      0, // user id
-      0, // candidate id
-      false, // confidence
-      100, // percentage
-    );
-    const userBefore = await eosService.getRowById('users', 0);
+    const time = new Date();
+    const {dataValues: userBefore} = await User.create({
+      username: `user${time}`,
+      unopinionatedMerits: 100,
+      externalInfo: '',
+    });
+    const candidate = await Candidate.create({
+      pollId: 2,
+      name: 'test',
+      description: 'test',
+      twitterUser: `test${time}`,
+      profilePictureUrl: 'test',
+      netTokenAmount: 0,
+      totalTokensConfidence: 0,
+      totalTokensOpposition: 0,
+      totalMeritsConfidence: 0,
+      totalMeritsOpposition: 0,
+    });
     await pollService.expressOpinion(
-      0, // user id
-      0, // candidate id
+      userBefore.id, // user id
+      candidate.id, // candidate id
       false, // confidence
       20, // number of merits
     );
-    await pollService.redeem(
-      0, // user id
-      0, // candidate id
+    const transaction = await sequelize.transaction();
+    await pollService.redeemFromPercentage(
+      userBefore.id, // user id
+      candidate.id, // candidate id
       false, // confidence
       50, // percentage
+      transaction,
     );
-    const userAfter = await eosService.getRowById('users', 0);
+    await transaction.commit();
+    const userAfter = await User.findById(userBefore.id);
 
     // Because of the bounding curve, when you sell half of your tokens
     // you don't get half of the merits you used to buy those tokens as
     // the last tokens you buy are more expensive. In this case you get
     // 3/4 of the original opinion.
     assert.equal(
-      userAfter['unopinionated_merits'],
-      userBefore['unopinionated_merits'] - 5,
+      userAfter.unopinionatedMerits,
+      userBefore.unopinionatedMerits - 5,
     );
   });
 });
