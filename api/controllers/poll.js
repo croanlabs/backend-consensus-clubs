@@ -114,7 +114,7 @@ module.exports.set = app => {
     auth.authenticate,
     (req, res) => {
       if (!req.auth) {
-        res.status(403).send();
+        res.status(401).send();
       }
       pollService
         .expressOpinion(

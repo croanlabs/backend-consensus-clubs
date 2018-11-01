@@ -3,6 +3,9 @@ const notificationService = require('../services/notification');
 
 module.exports.set = app => {
   app.get('/notifications', auth.authenticate, async (req, res) => {
+    if (!req.auth) {
+      res.status(401).send();
+    }
     const notifications = await notificationService
       .getNotifications(req.auth.id)
       .catch(err => {
