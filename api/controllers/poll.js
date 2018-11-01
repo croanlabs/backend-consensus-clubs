@@ -37,6 +37,9 @@ module.exports.set = app => {
   });
 
   app.post('/polls/create', (req, res) => {
+    // TODO enable this endpoint for the admin at some stage.
+    res.status(403).send();
+
     pollService
       .createPoll(req.body.question)
       .then(() => {
@@ -133,7 +136,8 @@ module.exports.set = app => {
     },
   );
 
-  app.post('/polls/:pollId/candidates/:candidateId/modify',
+  app.post(
+    '/polls/:pollId/candidates/:candidateId/modify',
     auth.authenticate,
     (req, res) => {
       pollService
@@ -153,17 +157,15 @@ module.exports.set = app => {
             error: 'Error redeeming benefits',
           });
         });
-  });
+    },
+  );
 
-  app.post('/polls/:pollId/candidates/:candidateId/withdraw',
+  app.post(
+    '/polls/:pollId/candidates/:candidateId/withdraw',
     auth.authenticate,
     (req, res) => {
       pollService
-        .withdraw(
-          req.auth.id,
-          req.params.candidateId,
-          req.body.confidence,
-        )
+        .withdraw(req.auth.id, req.params.candidateId, req.body.confidence)
         .then(() => {
           res.status(200).send();
         })
@@ -174,5 +176,6 @@ module.exports.set = app => {
             error: 'Error redeeming benefits',
           });
         });
-    });
+    },
+  );
 };
