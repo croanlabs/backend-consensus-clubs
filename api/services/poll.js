@@ -8,6 +8,7 @@ const {
   TokenHolder,
   sequelize,
 } = require('../config/database');
+const notificationService = require('./notification');
 const tokenService = require('./token');
 const twitterService = require('./twitter');
 const userService = require('./user');
@@ -27,7 +28,10 @@ exp.getPolls = async () => {
         required: false,
       },
     ],
-    order: ['id', [{model: Candidate, as: 'candidates'}, 'netTokenAmount', 'desc']],
+    order: [
+      'id',
+      [{model: Candidate, as: 'candidates'}, 'netTokenAmount', 'desc'],
+    ],
   });
   return res;
 };
@@ -55,12 +59,36 @@ exp.getPoll = async pollId => {
 /**
  * Insert a poll into the polls table.
  *
+ * Options:
+ *    transaction: sequelize transaction to be used in the notification
+ *      creation.
+ *
  */
-exp.createPoll = async (question, options={}) => {
-  const res = await Poll.findOrCreate({
-    where: {question},
-    options,
-  });
+exp.createPoll = async (question, options = {}) => {
+  const isLocalTransaction = !options.transaction;
+  const insertOptions = options.transaction
+    ? {transaction: options.transaction}
+    : {transaction: await sequelize.transaction()};
+  let res;
+  try {
+    res = await Poll.findOrCreate({
+      where: {question},
+      insertOptions,
+    });
+    await notificationService.notifyPollEvent(
+      `New poll: ${question}`,
+      res[0].id,
+      insertOptions,
+    );
+  } catch (err) {
+    if (isLocalTransaction) {
+      await insertOptions.transaction.rollback();
+    }
+    throw err;
+  }
+  if (isLocalTransaction) {
+    await insertOptions.transaction.commit();
+  }
   return res[0];
 };
 
@@ -73,27 +101,54 @@ exp.createPoll = async (question, options={}) => {
  *
  */
 exp.addCandidate = async (pollId, twitterUser, options = {}) => {
+  const isLocalTransaction = !options.transaction;
+  const insertOptions = options.transaction
+    ? {transaction: options.transaction}
+    : {transaction: await sequelize.transaction()};
   const candTwitter = await twitterService.getTwitterUserByIdOrScreenName({
     screenName: twitterUser,
   });
-  const [candidate, created] = await Candidate.findOrCreate({
-    where: {pollId, twitterUser},
-    defaults: {
-      pollId,
-      name: candTwitter.name,
-      description: candTwitter.description,
-      twitterUser,
-      profilePictureUrl: candTwitter.profile_image_url,
-      netTokenAmount: 0,
-      totalTokensConfidence: 0,
-      totalTokensOpposition: 0,
-      totalMeritsConfidence: 0,
-      totalMeritsOpposition: 0,
-    },
-    ...options,
-  });
+  let candidate;
+  let created;
+  try {
+    [candidate, created] = await Candidate.findOrCreate({
+      where: {pollId, twitterUser},
+      defaults: {
+        pollId,
+        name: candTwitter.name,
+        description: candTwitter.description,
+        twitterUser,
+        profilePictureUrl: candTwitter.profile_image_url,
+        netTokenAmount: 0,
+        totalTokensConfidence: 0,
+        totalTokensOpposition: 0,
+        totalMeritsConfidence: 0,
+        totalMeritsOpposition: 0,
+      },
+      ...insertOptions,
+    });
+  } catch (err) {
+    console.log(err);
+    insertOptions.transaction.rollback();
+    throw err;
+  }
   if (!created) {
-    throw new Error('Error: candidate already exists');
+    await insertOptions.transaction.rollback();
+    throw new Error(`Error: candidate was not inserted: ${twitterUser}`);
+  } else {
+    try {
+      await notificationService.notifyPollEvent(
+        `New candidate: ${candidate.name}`,
+        pollId,
+        {candidateId: candidate.id, ...insertOptions},
+      );
+    } catch (err) {
+      await insertOptions.transaction.rollback();
+      throw err;
+    }
+  }
+  if (isLocalTransaction) {
+    await insertOptions.transaction.commit();
   }
   return candidate;
 };
@@ -137,7 +192,7 @@ exp.userAddCandidate = async (
       },
     );
   } catch (err) {
-    transaction.rollback();
+    await transaction.rollback();
     throw err;
   }
   await transaction.commit();
@@ -173,7 +228,7 @@ exp.expressOpinion = async (
   }
 
   // Try to perform all the database access operations.
-  // If any of them throw an error rollback the rollback the transaction.
+  // Rollback if sth fails.
   try {
     await userService.updateUserMerits(userId, -commitmentMerits, {
       transaction,

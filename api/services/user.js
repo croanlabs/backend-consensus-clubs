@@ -1,5 +1,6 @@
 const config = require('../config');
 const eos = require('../config/eos');
+const notificationService = require('./notification');
 const {Candidate, Opinion, User, sequelize} = require('../config/database');
 
 const exp = module.exports;
@@ -9,40 +10,42 @@ const exp = module.exports;
  * it is inserted into both database and blockchain.
  *
  */
-exp.findOrCreate = (username, externalInfo) =>
-  sequelize.transaction().then(tx =>
-    User.findOrCreate({
-      where: {
-        username,
-      },
-      defaults: {
-        externalInfo,
-        unopinionatedMerits: 1000,
-      },
-      transaction: tx,
-    })
-      .then(async result => {
-        const created = result[1];
-        if (created) {
-          try {
-            await exp.createUserBlockchain(username);
-          } catch (err) {
-            console.log(err);
-            tx.rollback();
-            return [null, false];
-          }
-        }
-        tx.commit();
-        return result;
-      })
-      .catch(err => {
-        console.log(err);
-        tx.rollback();
-        return [null, false];
-      }),
-  );
+exp.findOrCreate = async (username, externalInfo) => {
+  const transaction = await sequelize.transaction();
+  const result = await User.findOrCreate({
+    where: {
+      username,
+    },
+    defaults: {
+      externalInfo,
+      unopinionatedMerits: 1000,
+    },
+    transaction,
+  }).catch(async err => {
+    console.log(err);
+    await transaction.rollback();
+    return [null, false];
+  });
+  const [user, created] = result;
+  if (created) {
+    await notificationService.notifyUser(
+      'Welcome to Consensus Clubs!',
+      user.id,
+      {transaction}
+    );
+    try {
+      await exp.createUserBlockchain(username);
+    } catch (err) {
+      console.log(err);
+      await transaction.rollback();
+      return [null, false];
+    }
+  }
+  await transaction.commit();
+  return result;
+};
 
-exp.getById = (id) => User.findById(id)
+exp.getById = id => User.findById(id);
 
 /**
  * Update the number of unopinionated merits the user has.
@@ -97,7 +100,8 @@ exp.newReferral = referredBy =>
  * on the blockchain.
  *
  */
-exp.getUserOpinions = (userId) => Opinion.findAll({
+exp.getUserOpinions = userId =>
+  Opinion.findAll({
     where: {userId},
     include: [
       {
