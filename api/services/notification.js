@@ -210,6 +210,7 @@ exp.flattenNotifications = notifications => notifications.map(notification => {
     if (notification.notificationTemplate) {
       res.templateCode = notification.notificationTemplate.code;
       res.templateText = notification.notificationTemplate.text;
+      res.icon = notification.notificationTemplate.icon;
     }
     return res;
   });
