@@ -1,21 +1,18 @@
 module.exports = {
   up: (queryInterface, Sequelize) =>
-    queryInterface.createTable('Notifications', {
+    queryInterface.createTable('NotificationTemplates', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      notificationTemplateId: {
-        allowNull: true,
-        references: {
-          model: 'NotificationTemplates',
-          referencesKey: 'id',
-        },
-        type: Sequelize.INTEGER,
+      code: {
+        allowNull: false,
+        type: Sequelize.STRING,
       },
       text: {
+        allowNull: false,
         type: Sequelize.STRING,
       },
       createdAt: {
@@ -27,5 +24,5 @@ module.exports = {
         type: Sequelize.DATE,
       },
     }),
-  down: queryInterface => queryInterface.dropTable('Notifications'),
+  down: queryInterface => queryInterface.dropTable('NotificationTemplates'),
 };

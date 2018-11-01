@@ -1,5 +1,6 @@
 const {
   Notification,
+  NotificationTemplate,
   GeneralNotification,
   PollNotification,
   User,
@@ -13,6 +14,7 @@ const exp = module.exports;
  * Create a notification for all users.
  *
  * Options:
+ *    notificationTemplateCode: code of the template to be used for the notification
  *    transaction: sequelize transaction to be used in the notification
  *      creation.
  */
@@ -25,7 +27,15 @@ exp.notifyAll = async (text, options) => {
   let notification;
   let genNotification;
   try {
-    notification = await Notification.create({text}, insertOptions);
+    notification = await Notification.create(
+      {
+        notificationTemplateId: await exp.getNotificationTemplateIdByCode(
+          options.notificationTemplateCode,
+        ),
+        text,
+      },
+      insertOptions,
+    );
     genNotification = await GeneralNotification.create(
       {
         notificationId: notification.id,
@@ -50,6 +60,7 @@ exp.notifyAll = async (text, options) => {
  * Options:
  *    candidateId: specify candidate id if the notification is related
  *      to a poll candidate.
+ *    notificationTemplateCode: code of the template to be used for the notification
  *    transaction: sequelize transaction to be used in the notification
  *      creation.
  *
@@ -64,7 +75,15 @@ exp.notifyPollEvent = async (text, pollId, options) => {
   let notification;
   let pollNotification;
   try {
-    notification = await Notification.create({text}, insertOptions);
+    notification = await Notification.create(
+      {
+        notificationTemplateId: await exp.getNotificationTemplateIdByCode(
+          options.notificationTemplateCode,
+        ),
+        text,
+      },
+      insertOptions,
+    );
     pollNotification = await PollNotification.create(
       {
         notificationId: notification.id,
@@ -89,6 +108,7 @@ exp.notifyPollEvent = async (text, pollId, options) => {
  * Create a notification for a user.
  *
  * Options:
+ *    notificationTemplateCode: code of the template to be used for the notification
  *    transaction: sequelize transaction to be used in the notification
  *      creation.
  */
@@ -101,7 +121,15 @@ exp.notifyUser = async (text, userId, options) => {
   let notification;
   let userNotification;
   try {
-    notification = await Notification.create({text}, insertOptions);
+    notification = await Notification.create(
+      {
+        notificationTemplateId: await exp.getNotificationTemplateIdByCode(
+          options.notificationTemplateCode,
+        ),
+        text,
+      },
+      insertOptions,
+    );
     userNotification = await UserNotification.create(
       {
         notificationId: notification.id,
@@ -128,27 +156,75 @@ exp.notifyUser = async (text, userId, options) => {
 exp.getNotifications = async userId => {
   const user = await User.findById(userId);
   const {Op} = sequelize;
-  return Notification.findAll({
+  const notifications = await Notification.findAll({
     where: {
       createdAt: {
         [Op.gte]: user.createdAt,
-      }
+      },
     },
     order: [['createdAt', 'DESC']],
     include: [
       {
+        as: 'userNotification',
         model: UserNotification,
         required: false,
         where: {userId},
       },
       {
+        as: 'generalNotification',
         model: GeneralNotification,
         required: false,
       },
       {
+        as: 'pollNotification',
         model: PollNotification,
+        required: false,
+      },
+      {
+        as: 'notificationTemplate',
+        model: NotificationTemplate,
         required: false,
       },
     ],
   });
-}
+  return exp.flattenNotifications(notifications);
+};
+
+/**
+ * Flattens the result of the notifications query.
+ *
+ */
+exp.flattenNotifications = notifications => notifications.map(notification => {
+    const res = {
+      id: notification.id,
+      text: notification.text,
+      createdAt: notification.createdAt,
+    };
+    if (notification.pollNotification) {
+      res.pollId = notification.pollNotification.pollId;
+    }
+    if (notification.pollNotification &&
+        notification.pollNotification.candidateId) {
+      res.candidateId = notification.pollNotification.candidateId;
+    }
+    if (notification.notificationTemplate) {
+      res.templateCode = notification.notificationTemplate.code;
+      res.templateText = notification.notificationTemplate.text;
+    }
+    return res;
+  });
+
+/**
+ * Get id of the notification template by code.
+ *
+ */
+exp.getNotificationTemplateIdByCode = async code => {
+  if (!code) {
+    return null;
+  }
+  const template = await NotificationTemplate.findOne({where: {code}});
+  if (!template) {
+    return null;
+  }
+  return template.id;
+};

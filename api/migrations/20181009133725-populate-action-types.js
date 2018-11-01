@@ -1,20 +1,23 @@
 module.exports = {
-  up: (queryInterface) => queryInterface.bulkInsert('ActionTypes', [
-    {
-      name: 'confidence',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      name: 'opposition',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      name: 'redemption',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ]),
+  up: (queryInterface) => {
+    const date = new Date();
+    return queryInterface.bulkInsert('ActionTypes', [
+      {
+        name: 'confidence',
+        createdAt: date,
+        updatedAt: date,
+      },
+      {
+        name: 'opposition',
+        createdAt: date,
+        updatedAt: date,
+      },
+      {
+        name: 'redemption',
+        createdAt: date,
+        updatedAt: date,
+      },
+    ])
+  },
   down: (queryInterface) => queryInterface.bulkDelete('ActionTypes', null, {}),
 };

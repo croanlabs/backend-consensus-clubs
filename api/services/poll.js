@@ -76,9 +76,12 @@ exp.createPoll = async (question, options = {}) => {
       insertOptions,
     });
     await notificationService.notifyPollEvent(
-      `New poll: ${question}`,
+      question,
       res[0].id,
-      insertOptions,
+      {
+        notificationTemplateCode: 'new_poll',
+        ...insertOptions,
+      },
     );
   } catch (err) {
     if (isLocalTransaction) {
@@ -138,9 +141,13 @@ exp.addCandidate = async (pollId, twitterUser, options = {}) => {
   } else {
     try {
       await notificationService.notifyPollEvent(
-        `New candidate: ${candidate.name}`,
+        candidate.name,
         pollId,
-        {candidateId: candidate.id, ...insertOptions},
+        {
+          candidateId: candidate.id,
+          notificationTemplateCode: 'new_candidate',
+          ...insertOptions,
+        },
       );
     } catch (err) {
       await insertOptions.transaction.rollback();

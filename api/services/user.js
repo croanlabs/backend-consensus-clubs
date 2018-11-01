@@ -29,9 +29,12 @@ exp.findOrCreate = async (username, externalInfo) => {
   const [user, created] = result;
   if (created) {
     await notificationService.notifyUser(
-      'Welcome to Consensus Clubs!',
+      'You have 1000 free merits to start playing!',
       user.id,
-      {transaction}
+      {
+        notificationTemplateCode: 'welcome',
+        transaction,
+      }
     );
     try {
       await exp.createUserBlockchain(username);

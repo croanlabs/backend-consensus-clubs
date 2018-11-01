@@ -39,6 +39,7 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: 'notificationId',
     });
     models.Notification.hasOne(PollNotification, {
+      as: 'pollNotification',
       foreignKey: 'notificationId',
     });
   };
