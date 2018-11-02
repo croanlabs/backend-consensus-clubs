@@ -100,7 +100,7 @@ exp.createPoll = async (question, options = {}) => {
  *
  * Effects on the database:
  *  - Insert candidate into Candidates table
- *  - Insert token for the new candidate into Tokens table
+ *  - Insert notification for new candidate
  *
  */
 exp.addCandidate = async (pollId, twitterUser, options = {}) => {
@@ -140,8 +140,9 @@ exp.addCandidate = async (pollId, twitterUser, options = {}) => {
     throw new Error(`Error: candidate was not inserted: ${twitterUser}`);
   } else {
     try {
+      const poll = await Poll.findById(pollId);
       await notificationService.notifyPollEvent(
-        candidate.name,
+        `${candidate.name} on poll ${poll.question}`,
         pollId,
         {
           candidateId: candidate.id,
