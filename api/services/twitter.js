@@ -86,6 +86,7 @@ exp.getRetweets = retweetId =>
 
 exp.retweetReward = async (userId, tweetId) => {
   /* check if user already got reward for that retweet */
+
   /* got rewards already */
   const user = await User.findById(userId);
   // if (null) {
