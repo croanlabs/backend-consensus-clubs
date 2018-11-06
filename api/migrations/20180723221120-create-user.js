@@ -21,6 +21,10 @@ module.exports = {
           type: Sequelize.JSON,
           allowNull: false,
         },
+        lastSeen: {
+          allowNull: false,
+          type: Sequelize.DATE,
+        },
         createdAt: {
           allowNull: false,
           type: Sequelize.DATE,

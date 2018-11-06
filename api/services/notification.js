@@ -187,14 +187,18 @@ exp.getNotifications = async userId => {
       },
     ],
   });
-  return exp.flattenNotifications(notifications);
+  const res = exp.flattenNotifications(notifications, new Date(user.lastSeen));
+  user.lastSeen = new Date();
+  await user.save();
+  return res;
 };
 
 /**
  * Flattens the result of the notifications query.
  *
  */
-exp.flattenNotifications = notifications => notifications.map(notification => {
+exp.flattenNotifications = (notifications, lastSeen) =>
+  notifications.map(notification => {
     const res = {
       id: notification.id,
       text: notification.text,
@@ -203,8 +207,10 @@ exp.flattenNotifications = notifications => notifications.map(notification => {
     if (notification.pollNotification) {
       res.pollId = notification.pollNotification.pollId;
     }
-    if (notification.pollNotification &&
-        notification.pollNotification.candidateId) {
+    if (
+      notification.pollNotification &&
+      notification.pollNotification.candidateId
+    ) {
       res.candidateId = notification.pollNotification.candidateId;
     }
     if (notification.notificationTemplate) {
@@ -212,6 +218,7 @@ exp.flattenNotifications = notifications => notifications.map(notification => {
       res.templateText = notification.notificationTemplate.text;
       res.icon = notification.notificationTemplate.icon;
     }
+    res.seen = notification.createdAt <= lastSeen;
     return res;
   });
 

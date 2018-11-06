@@ -19,6 +19,7 @@ exp.findOrCreate = async (username, externalInfo) => {
     defaults: {
       externalInfo,
       unopinionatedMerits: 1000,
+      lastSeen: new Date(),
     },
     transaction,
   }).catch(async err => {

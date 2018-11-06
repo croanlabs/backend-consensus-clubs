@@ -10,6 +10,7 @@ module.exports = (sequelize, DataTypes) => {
       username: DataTypes.STRING,
       unopinionatedMerits: DataTypes.DOUBLE,
       externalInfo: DataTypes.JSON,
+      lastSeen: DataTypes.DATE,
       createdAt: DataTypes.DATE,
       updatedAt: DataTypes.DATE
     },
