@@ -15,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
         }
       },
       tweetForRewardId: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.BIGINT,
         references: {
           model: 'TweetForRewards',
           referencesKey: 'id'

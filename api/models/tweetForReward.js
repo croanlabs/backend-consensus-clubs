@@ -3,7 +3,7 @@ module.exports = (sequelize, DataTypes) => {
     'TweetForReward',
     {
       id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.BIGINT,
         primaryKey: true
       },
       createdAt: DataTypes.DATE,
