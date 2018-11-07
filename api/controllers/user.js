@@ -38,7 +38,7 @@ module.exports.set = app => {
     res.send(usersRes.data);
   });
 
-  // Retweet
+  // Retweet to get reward
   app.post('/twitter-retweet', auth.authenticate, (req, res) => {
     if (!req.auth) {
       res.status(401).send();
@@ -59,4 +59,8 @@ module.exports.set = app => {
         });
       });
   });
+
+  // pass if user has rewarded or not
+  // app.get('/confirm-reward', async (req, res) => {
+  // })
 };
