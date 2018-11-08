@@ -68,8 +68,9 @@ exp.getTwitterUserByIdOrScreenName = options => {
     });
 };
 
-/*
- * check if user already got reward for that retweet
+/**
+ * Check if user already got reward for that retweet
+ *
  */
 exp.receivedRetweetReward = (userId, tweetForRewardId, transaction) =>
   Reward.findAll({
@@ -85,8 +86,9 @@ exp.receivedRetweetReward = (userId, tweetForRewardId, transaction) =>
     ]
   });
 
-/*
- * get the list of userIds who retweeted the tweet
+/**
+ * Get the list of userIds who retweeted the tweet
+ *
  */
 exp.getRetweets = retweetId =>
   twitterClient
@@ -100,8 +102,9 @@ exp.getRetweets = retweetId =>
       console.log(err);
     });
 
-/*
- * if the user is retweeted, give the user 100 merits as reward
+/**
+ * If the user is retweeted, give the user 100 merits as reward
+ *
  */
 
 exp.retweetReward = async (userId, tweetForRewardId) => {
@@ -155,4 +158,28 @@ exp.retweetReward = async (userId, tweetForRewardId) => {
     console.log("You haven't retweeted yet!");
   }
   await transaction.commit();
+};
+
+/**
+ * Get no rewarded twitter ids
+ *
+ */
+exp.noRewardedTwitterIds = async userId => {
+  // get all rewarded tweetids tied to the user
+  const rewards = await Reward.findAll({
+    where: { userId },
+    include: [
+      {
+        as: 'retweetReward',
+        model: RetweetReward,
+        required: true
+      }
+    ]
+  }).map(reward => reward.retweetReward.tweetForRewardId);
+  // get all tweetids
+  const listOfTweetId = (await TweetForReward.findAll())
+    .map(tweet => tweet.id)
+    .filter(id => !rewards.includes(id));
+
+  return listOfTweetId;
 };

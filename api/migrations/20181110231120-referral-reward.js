@@ -1,23 +1,27 @@
 module.exports = {
   up: (queryInterface, Sequelize) =>
-    queryInterface.createTable('Rewards', {
+    queryInterface.createTable('ReferralRewards', {
       id: {
         allowNull: false,
         type: Sequelize.INTEGER,
         autoIncrement: true,
         primaryKey: true
       },
-      userId: {
+      rewardId: {
+        allowNull: false,
+        type: Sequelize.INTEGER,
+        references: {
+          model: 'Rewards',
+          referencesKey: 'id'
+        }
+      },
+      referredUserId: {
         allowNull: false,
         type: Sequelize.INTEGER,
         references: {
           model: 'Users',
           referencesKey: 'id'
         }
-      },
-      merits: {
-        allowNull: false,
-        type: Sequelize.DOUBLE
       },
       createdAt: {
         allowNull: false,
@@ -28,5 +32,6 @@ module.exports = {
         type: Sequelize.DATE
       }
     }),
-  down: queryInterface => queryInterface.dropTable('Rewards')
+
+  down: queryInterface => queryInterface.dropTable('ReferralRewards')
 };

@@ -34,6 +34,10 @@ module.exports = (sequelize, DataTypes) => {
       as: 'rewards',
       foreignKey: 'userId'
     });
+    User.hasMany(models.ReferralReward, {
+      as: 'referralRewards',
+      foreignKey: 'refferedUserId'
+    });
   };
 
   return User;

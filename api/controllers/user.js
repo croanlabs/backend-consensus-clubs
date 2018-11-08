@@ -38,6 +38,26 @@ module.exports.set = app => {
     res.send(usersRes.data);
   });
 
+  // pass if user has rewarded or not
+  app.get('/twitter-tweetids', auth.authenticate, async (req, res) => {
+    if (!req.auth) {
+      res.status(401).send();
+    }
+    // pass availableTweetIds
+    twitterService
+      .noRewardedTwitterIds(req.auth.id)
+      .then(result => {
+        res.send(result);
+      })
+      .catch(err => {
+        // TODO logger
+        console.log(err);
+        res.status(500).json({
+          error: 'Error getting available twitter ids'
+        });
+      });
+  });
+
   // Retweet to get reward
   app.post('/twitter-retweet', auth.authenticate, (req, res) => {
     if (!req.auth) {
@@ -59,8 +79,4 @@ module.exports.set = app => {
         });
       });
   });
-
-  // pass if user has rewarded or not
-  // app.get('/confirm-reward', async (req, res) => {
-  // })
 };

@@ -3,9 +3,10 @@ const {
   NotificationTemplate,
   GeneralNotification,
   PollNotification,
+  ReferralNotification,
   User,
   UserNotification,
-  sequelize,
+  sequelize
 } = require('../config/database');
 
 const exp = module.exports;
@@ -21,8 +22,8 @@ const exp = module.exports;
 exp.notifyAll = async (text, options) => {
   const isLocalTransaction = !options.transaction;
   const insertOptions = options.transaction
-    ? {transaction: options.transaction}
-    : {transaction: await sequelize.transaction()};
+    ? { transaction: options.transaction }
+    : { transaction: await sequelize.transaction() };
 
   let notification;
   let genNotification;
@@ -30,17 +31,17 @@ exp.notifyAll = async (text, options) => {
     notification = await Notification.create(
       {
         notificationTemplateId: await exp.getNotificationTemplateIdByCode(
-          options.notificationTemplateCode,
+          options.notificationTemplateCode
         ),
-        text,
+        text
       },
-      insertOptions,
+      insertOptions
     );
     genNotification = await GeneralNotification.create(
       {
-        notificationId: notification.id,
+        notificationId: notification.id
       },
-      insertOptions,
+      insertOptions
     );
   } catch (err) {
     if (isLocalTransaction) {
@@ -68,8 +69,8 @@ exp.notifyAll = async (text, options) => {
 exp.notifyPollEvent = async (text, pollId, options) => {
   const isLocalTransaction = !options.transaction;
   const insertOptions = options.transaction
-    ? {transaction: options.transaction}
-    : {transaction: await sequelize.transaction()};
+    ? { transaction: options.transaction }
+    : { transaction: await sequelize.transaction() };
   const candidateId = options.candidateId || null;
 
   let notification;
@@ -78,19 +79,19 @@ exp.notifyPollEvent = async (text, pollId, options) => {
     notification = await Notification.create(
       {
         notificationTemplateId: await exp.getNotificationTemplateIdByCode(
-          options.notificationTemplateCode,
+          options.notificationTemplateCode
         ),
-        text,
+        text
       },
-      insertOptions,
+      insertOptions
     );
     pollNotification = await PollNotification.create(
       {
         notificationId: notification.id,
         pollId,
-        candidateId,
+        candidateId
       },
-      insertOptions,
+      insertOptions
     );
   } catch (err) {
     if (isLocalTransaction) {
@@ -102,6 +103,51 @@ exp.notifyPollEvent = async (text, pollId, options) => {
     await insertOptions.transaction.commit();
   }
   return [notification.id, pollNotification.id];
+};
+/**
+ * Create a referral success notification.
+ *
+ * Options:
+ *    notificationTemplateCode: code of the template to be used for the notification
+ *    transaction: sequelize transaction to be used in the notification
+ *      creation.
+ *
+ */
+exp.notifyReferralSuccess = async (text, referredUserId, options) => {
+  const isLocalTransaction = !options.transaction;
+  const insertOptions = options.transaction
+    ? { transaction: options.transaction }
+    : { transaction: await sequelize.transaction() };
+
+  let notification;
+  let referralNotification;
+  try {
+    notification = await Notification.create(
+      {
+        notificationTemplateId: await exp.getNotificationTemplateIdByCode(
+          options.notificationTemplateCode
+        ),
+        text
+      },
+      insertOptions
+    );
+    referralNotification = await ReferralNotification.create(
+      {
+        notificationId: notification.id,
+        referredUserId
+      },
+      insertOptions
+    );
+  } catch (err) {
+    if (isLocalTransaction) {
+      await insertOptions.transaction.rollback();
+    }
+    throw err;
+  }
+  if (isLocalTransaction) {
+    await insertOptions.transaction.commit();
+  }
+  return [notification.id, referralNotification.id];
 };
 
 /**
@@ -115,8 +161,8 @@ exp.notifyPollEvent = async (text, pollId, options) => {
 exp.notifyUser = async (text, userId, options) => {
   const isLocalTransaction = !options.transaction;
   const insertOptions = options.transaction
-    ? {transaction: options.transaction}
-    : {transaction: await sequelize.transaction()};
+    ? { transaction: options.transaction }
+    : { transaction: await sequelize.transaction() };
 
   let notification;
   let userNotification;
@@ -124,18 +170,18 @@ exp.notifyUser = async (text, userId, options) => {
     notification = await Notification.create(
       {
         notificationTemplateId: await exp.getNotificationTemplateIdByCode(
-          options.notificationTemplateCode,
+          options.notificationTemplateCode
         ),
-        text,
+        text
       },
-      insertOptions,
+      insertOptions
     );
     userNotification = await UserNotification.create(
       {
         notificationId: notification.id,
-        userId,
+        userId
       },
-      insertOptions,
+      insertOptions
     );
   } catch (err) {
     if (isLocalTransaction) {
@@ -155,12 +201,12 @@ exp.notifyUser = async (text, userId, options) => {
  */
 exp.getNotifications = async userId => {
   const user = await User.findById(userId);
-  const {Op} = sequelize;
+  const { Op } = sequelize;
   const notifications = await Notification.findAll({
     where: {
       createdAt: {
-        [Op.gte]: user.createdAt,
-      },
+        [Op.gte]: user.createdAt
+      }
     },
     order: [['createdAt', 'DESC']],
     include: [
@@ -168,24 +214,29 @@ exp.getNotifications = async userId => {
         as: 'userNotification',
         model: UserNotification,
         required: false,
-        where: {userId},
+        where: { userId }
       },
       {
         as: 'generalNotification',
         model: GeneralNotification,
-        required: false,
+        required: false
       },
       {
         as: 'pollNotification',
         model: PollNotification,
-        required: false,
+        required: false
+      },
+      {
+        as: 'referralNotification',
+        model: ReferralNotification,
+        required: false
       },
       {
         as: 'notificationTemplate',
         model: NotificationTemplate,
-        required: false,
-      },
-    ],
+        required: false
+      }
+    ]
   });
   const res = exp.flattenNotifications(notifications, new Date(user.lastSeen));
   user.lastSeen = new Date();
@@ -202,7 +253,7 @@ exp.flattenNotifications = (notifications, lastSeen) =>
     const res = {
       id: notification.id,
       text: notification.text,
-      createdAt: notification.createdAt,
+      createdAt: notification.createdAt
     };
     if (notification.pollNotification) {
       res.pollId = notification.pollNotification.pollId;
@@ -212,6 +263,9 @@ exp.flattenNotifications = (notifications, lastSeen) =>
       notification.pollNotification.candidateId
     ) {
       res.candidateId = notification.pollNotification.candidateId;
+    }
+    if (notification.referralNotification) {
+      res.referredUserId = notification.referralNotification.referredUserId;
     }
     if (notification.notificationTemplate) {
       res.templateCode = notification.notificationTemplate.code;
@@ -230,7 +284,7 @@ exp.getNotificationTemplateIdByCode = async code => {
   if (!code) {
     return null;
   }
-  const template = await NotificationTemplate.findOne({where: {code}});
+  const template = await NotificationTemplate.findOne({ where: { code } });
   if (!template) {
     return null;
   }
