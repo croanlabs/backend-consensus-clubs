@@ -5,7 +5,7 @@ const {
   PollNotification,
   User,
   UserNotification,
-  sequelize
+  sequelize,
 } = require('../config/database');
 
 const exp = module.exports;
@@ -21,8 +21,8 @@ const exp = module.exports;
 exp.notifyAll = async (text, options) => {
   const isLocalTransaction = !options.transaction;
   const insertOptions = options.transaction
-    ? { transaction: options.transaction }
-    : { transaction: await sequelize.transaction() };
+    ? {transaction: options.transaction}
+    : {transaction: await sequelize.transaction()};
 
   let notification;
   let genNotification;
@@ -30,17 +30,17 @@ exp.notifyAll = async (text, options) => {
     notification = await Notification.create(
       {
         notificationTemplateId: await exp.getNotificationTemplateIdByCode(
-          options.notificationTemplateCode
+          options.notificationTemplateCode,
         ),
-        text
+        text,
       },
-      insertOptions
+      insertOptions,
     );
     genNotification = await GeneralNotification.create(
       {
-        notificationId: notification.id
+        notificationId: notification.id,
       },
-      insertOptions
+      insertOptions,
     );
   } catch (err) {
     if (isLocalTransaction) {
@@ -68,8 +68,8 @@ exp.notifyAll = async (text, options) => {
 exp.notifyPollEvent = async (text, pollId, options) => {
   const isLocalTransaction = !options.transaction;
   const insertOptions = options.transaction
-    ? { transaction: options.transaction }
-    : { transaction: await sequelize.transaction() };
+    ? {transaction: options.transaction}
+    : {transaction: await sequelize.transaction()};
   const candidateId = options.candidateId || null;
 
   let notification;
@@ -78,19 +78,19 @@ exp.notifyPollEvent = async (text, pollId, options) => {
     notification = await Notification.create(
       {
         notificationTemplateId: await exp.getNotificationTemplateIdByCode(
-          options.notificationTemplateCode
+          options.notificationTemplateCode,
         ),
-        text
+        text,
       },
-      insertOptions
+      insertOptions,
     );
     pollNotification = await PollNotification.create(
       {
         notificationId: notification.id,
         pollId,
-        candidateId
+        candidateId,
       },
-      insertOptions
+      insertOptions,
     );
   } catch (err) {
     if (isLocalTransaction) {
@@ -115,8 +115,8 @@ exp.notifyPollEvent = async (text, pollId, options) => {
 exp.notifyUser = async (text, userId, options) => {
   const isLocalTransaction = !options.transaction;
   const insertOptions = options.transaction
-    ? { transaction: options.transaction }
-    : { transaction: await sequelize.transaction() };
+    ? {transaction: options.transaction}
+    : {transaction: await sequelize.transaction()};
 
   let notification;
   let userNotification;
@@ -124,18 +124,18 @@ exp.notifyUser = async (text, userId, options) => {
     notification = await Notification.create(
       {
         notificationTemplateId: await exp.getNotificationTemplateIdByCode(
-          options.notificationTemplateCode
+          options.notificationTemplateCode,
         ),
-        text
+        text,
       },
-      insertOptions
+      insertOptions,
     );
     userNotification = await UserNotification.create(
       {
         notificationId: notification.id,
-        userId
+        userId,
       },
-      insertOptions
+      insertOptions,
     );
   } catch (err) {
     if (isLocalTransaction) {
@@ -150,45 +150,116 @@ exp.notifyUser = async (text, userId, options) => {
 };
 
 /**
- * Get notifications for a user.
+ * Get all notifications for a user, including:
+ *  - user notifications: specifically for the user.
+ *  - general notifications: for every user.
+ *  - poll notifications: associated with polls that can be interesting
+ *    for the user.
  *
  */
 exp.getNotifications = async userId => {
   const user = await User.findById(userId);
-  const { Op } = sequelize;
-  const notifications = await Notification.findAll({
+  const data = await Promise.all([
+    exp.getUserNotifications(userId, user.createdAt),
+    exp.getGeneralNotifications(user.createdAt),
+    exp.getPollNotifications(user.createdAt),
+  ]);
+  const notifications = [].concat(...data);
+  notifications.sort((a, b) => b.createdAt - a.createdAt);
+  return exp.flattenNotifications(notifications, new Date(user.lastSeen));
+};
+
+/**
+ * Get notifications that where specifically created for a user,
+ * such us the welcome message or a reward for retweeting.
+ *
+ */
+exp.getUserNotifications = (userId, dateFrom) => {
+  const {Op} = sequelize;
+  return Notification.findAll({
     where: {
       createdAt: {
-        [Op.gte]: user.createdAt
-      }
+        [Op.gte]: dateFrom,
+      },
     },
+    limit: 10,
     order: [['createdAt', 'DESC']],
     include: [
       {
         as: 'userNotification',
         model: UserNotification,
-        required: false,
-        where: { userId }
-      },
-      {
-        as: 'generalNotification',
-        model: GeneralNotification,
-        required: false
-      },
-      {
-        as: 'pollNotification',
-        model: PollNotification,
-        required: false
+        required: true,
+        where: {userId},
       },
       {
         as: 'notificationTemplate',
         model: NotificationTemplate,
-        required: false
-      }
-    ]
+        required: false,
+      },
+    ],
   });
-  const res = exp.flattenNotifications(notifications, new Date(user.lastSeen));
-  return res;
+};
+
+/**
+ * Get notifications created for all users.
+ *
+ */
+exp.getGeneralNotifications = dateFrom => {
+  const {Op} = sequelize;
+  return Notification.findAll({
+    where: {
+      createdAt: {
+        [Op.gte]: dateFrom,
+      },
+    },
+    limit: 10,
+    order: [['createdAt', 'DESC']],
+    include: [
+      {
+        as: 'generalNotification',
+        model: GeneralNotification,
+        required: true,
+      },
+      {
+        as: 'notificationTemplate',
+        model: NotificationTemplate,
+        required: false,
+      },
+    ],
+  });
+};
+
+/**
+ * Get notifications created for all users.
+ *
+ * FIXME pass parameter with the interests of a user
+ * and just return notifications related to that user's
+ * polls.
+ *
+ */
+exp.getPollNotifications = dateFrom => {
+  const {Op} = sequelize;
+  return Notification.findAll({
+    where: {
+      createdAt: {
+        [Op.gte]: dateFrom,
+      },
+    },
+    limit: 10,
+    order: [['createdAt', 'DESC']],
+    include: [
+      {
+        as: 'pollNotification',
+        model: PollNotification,
+        required: true,
+      },
+      {
+        as: 'notificationTemplate',
+        model: NotificationTemplate,
+        required: false,
+      },
+    ],
+  });
 };
 
 /**
@@ -200,7 +271,7 @@ exp.flattenNotifications = (notifications, lastSeen) =>
     const res = {
       id: notification.id,
       text: notification.text,
-      createdAt: notification.createdAt
+      createdAt: notification.createdAt,
     };
     if (notification.pollNotification) {
       res.pollId = notification.pollNotification.pollId;
@@ -228,7 +299,7 @@ exp.getNotificationTemplateIdByCode = async code => {
   if (!code) {
     return null;
   }
-  const template = await NotificationTemplate.findOne({ where: { code } });
+  const template = await NotificationTemplate.findOne({where: {code}});
   if (!template) {
     return null;
   }
