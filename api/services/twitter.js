@@ -1,10 +1,4 @@
-const {
-  User,
-  sequelize,
-  Reward,
-  RetweetReward,
-  TweetForReward
-} = require('../config/database');
+const { Reward, RetweetReward, TweetForReward } = require('../config/database');
 
 const twitterClient = require('../config/twitter');
 
@@ -69,24 +63,6 @@ exp.getTwitterUserByIdOrScreenName = options => {
 };
 
 /**
- * Check if user already got reward for that retweet
- *
- */
-exp.receivedRetweetReward = (userId, tweetForRewardId, transaction) =>
-  Reward.findAll({
-    where: { userId },
-    lock: transaction.LOCK.UPDATE,
-    include: [
-      {
-        as: 'retweetReward',
-        model: RetweetReward,
-        where: { tweetForRewardId },
-        required: true
-      }
-    ]
-  });
-
-/**
  * Get the list of userIds who retweeted the tweet
  *
  */
@@ -101,64 +77,6 @@ exp.getRetweets = retweetId =>
     .catch(err => {
       console.log(err);
     });
-
-/**
- * If the user is retweeted, give the user 100 merits as reward
- *
- */
-
-exp.retweetReward = async (userId, tweetForRewardId) => {
-  /* check if user already got reward for that retweet */
-  const transaction = await sequelize.transaction();
-
-  const reward = await exp.receivedRetweetReward(
-    userId,
-    tweetForRewardId,
-    transaction
-  );
-  /* got rewards already */
-  if (reward.length) {
-    throw new Error('Error: User already received reward ');
-  }
-  const tweetForReward = await TweetForReward.findById(tweetForRewardId);
-  if (!tweetForReward) {
-    throw new Error('Error: Not the right tweet id');
-  }
-  /* Get user from database */
-  const user = await User.findById(userId, {
-    lock: transaction.LOCK.UPDATE,
-    transaction
-  });
-  // check if the user is in retweeters list
-  const retweeters = await exp.getRetweets(tweetForRewardId);
-  const retweeterId = user.externalInfo.id.toString();
-  if (retweeters.includes(retweeterId)) {
-    try {
-      user.unopinionatedMerits += 100;
-      await user.save({ transaction });
-      const newReward = await Reward.create(
-        {
-          userId,
-          merits: 100
-        },
-        { transaction }
-      );
-      await RetweetReward.create(
-        {
-          tweetForRewardId,
-          rewardId: newReward.id
-        },
-        { transaction }
-      );
-    } catch (err) {
-      console.log(err);
-      await transaction.rollback();
-    }
-  } else {
-    console.log("You haven't retweeted yet!");
-  }
-  await transaction.commit();
-};
 
 /**
  * Get no rewarded twitter ids

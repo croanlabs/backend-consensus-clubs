@@ -1,7 +1,7 @@
 const config = require('../config');
 const eos = require('../config/eos');
 const notificationService = require('./notification');
-const {Candidate, Opinion, User, sequelize} = require('../config/database');
+const { Candidate, Opinion, User, sequelize } = require('../config/database');
 
 const exp = module.exports;
 
@@ -14,14 +14,14 @@ exp.findOrCreate = async (username, externalInfo) => {
   const transaction = await sequelize.transaction();
   const result = await User.findOrCreate({
     where: {
-      username,
+      username
     },
     defaults: {
       externalInfo,
       unopinionatedMerits: 1000,
-      lastSeen: new Date(),
+      lastSeen: new Date()
     },
-    transaction,
+    transaction
   }).catch(async err => {
     console.log(err);
     await transaction.rollback();
@@ -34,7 +34,7 @@ exp.findOrCreate = async (username, externalInfo) => {
       user.id,
       {
         notificationTemplateCode: 'welcome',
-        transaction,
+        transaction
       }
     );
     try {
@@ -63,7 +63,7 @@ exp.updateUserMerits = async (userId, merits, options) => {
   if (options && options.transaction) {
     optionsUpdate = {
       lock: options.transaction.LOCK.UPDATE,
-      transaction: options.transaction,
+      transaction: options.transaction
     };
   }
   const user = await User.findById(userId, optionsUpdate);
@@ -83,20 +83,8 @@ exp.updateUserMerits = async (userId, merits, options) => {
  */
 exp.createUserBlockchain = username =>
   eos.contract(config.eosUsername).then(contract => {
-    const options = {authorization: [`${config.eosUsername}@active`]};
+    const options = { authorization: [`${config.eosUsername}@active`] };
     return contract.newuser(username, 1000, options);
-  });
-
-/**
- * Process a user referral.
- *
- * Who referred the new user gets a pre-determined number of merits.
- *
- */
-exp.newReferral = referredBy =>
-  eos.contract(config.eosUsername).then(contract => {
-    const options = {authorization: [`${config.eosUsername}@active`]};
-    return contract.newreferral(referredBy, options);
   });
 
 /**
@@ -106,12 +94,12 @@ exp.newReferral = referredBy =>
  */
 exp.getUserOpinions = userId =>
   Opinion.findAll({
-    where: {userId},
+    where: { userId },
     include: [
       {
         model: Candidate,
         as: 'candidate',
-        required: true,
-      },
-    ],
+        required: true
+      }
+    ]
   });

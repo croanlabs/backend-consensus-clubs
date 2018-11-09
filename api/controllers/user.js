@@ -1,5 +1,6 @@
 const userService = require('../services/user');
 const twitterService = require('../services/twitter');
+const rewardService = require('../services/reward');
 const auth = require('../middleware/auth');
 
 module.exports.set = app => {
@@ -66,7 +67,7 @@ module.exports.set = app => {
     if (!req.query.id) {
       res.status(400);
     }
-    twitterService
+    rewardService
       .retweetReward(req.auth.id, req.body.tweetId)
       .then(() => {
         res.status(200).send();

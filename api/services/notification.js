@@ -3,7 +3,6 @@ const {
   NotificationTemplate,
   GeneralNotification,
   PollNotification,
-  ReferralNotification,
   User,
   UserNotification,
   sequelize
@@ -104,51 +103,6 @@ exp.notifyPollEvent = async (text, pollId, options) => {
   }
   return [notification.id, pollNotification.id];
 };
-/**
- * Create a referral success notification.
- *
- * Options:
- *    notificationTemplateCode: code of the template to be used for the notification
- *    transaction: sequelize transaction to be used in the notification
- *      creation.
- *
- */
-exp.notifyReferralSuccess = async (text, referredUserId, options) => {
-  const isLocalTransaction = !options.transaction;
-  const insertOptions = options.transaction
-    ? { transaction: options.transaction }
-    : { transaction: await sequelize.transaction() };
-
-  let notification;
-  let referralNotification;
-  try {
-    notification = await Notification.create(
-      {
-        notificationTemplateId: await exp.getNotificationTemplateIdByCode(
-          options.notificationTemplateCode
-        ),
-        text
-      },
-      insertOptions
-    );
-    referralNotification = await ReferralNotification.create(
-      {
-        notificationId: notification.id,
-        referredUserId
-      },
-      insertOptions
-    );
-  } catch (err) {
-    if (isLocalTransaction) {
-      await insertOptions.transaction.rollback();
-    }
-    throw err;
-  }
-  if (isLocalTransaction) {
-    await insertOptions.transaction.commit();
-  }
-  return [notification.id, referralNotification.id];
-};
 
 /**
  * Create a notification for a user.
@@ -227,11 +181,6 @@ exp.getNotifications = async userId => {
         required: false
       },
       {
-        as: 'referralNotification',
-        model: ReferralNotification,
-        required: false
-      },
-      {
         as: 'notificationTemplate',
         model: NotificationTemplate,
         required: false
@@ -263,9 +212,6 @@ exp.flattenNotifications = (notifications, lastSeen) =>
       notification.pollNotification.candidateId
     ) {
       res.candidateId = notification.pollNotification.candidateId;
-    }
-    if (notification.referralNotification) {
-      res.referredUserId = notification.referralNotification.referredUserId;
     }
     if (notification.notificationTemplate) {
       res.templateCode = notification.notificationTemplate.code;
