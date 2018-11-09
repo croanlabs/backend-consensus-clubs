@@ -1,49 +1,42 @@
-const config = require('../config');
-const eos = require('../config/eos');
 const notificationService = require('./notification');
-const { Candidate, Opinion, User, sequelize } = require('../config/database');
+const {Candidate, Opinion, User, sequelize} = require('../config/database');
 
 const exp = module.exports;
 
 /**
- * Find or create a user. If the user is not in the database
- * it is inserted into both database and blockchain.
+ * Find or create a user.
  *
  */
 exp.findOrCreate = async (username, externalInfo) => {
   const transaction = await sequelize.transaction();
-  const result = await User.findOrCreate({
-    where: {
-      username
-    },
-    defaults: {
-      externalInfo,
-      unopinionatedMerits: 1000,
-      lastSeen: new Date()
-    },
-    transaction
-  }).catch(async err => {
+  let result;
+  try {
+    result = await User.findOrCreate({
+      where: {
+        username,
+      },
+      defaults: {
+        externalInfo,
+        unopinionatedMerits: 1000,
+        lastSeen: new Date(),
+      },
+      transaction,
+    });
+    const [user, created] = result;
+    if (created) {
+      await notificationService.notifyUser(
+        'You have 1000 free merits to start playing!',
+        user.id,
+        {
+          notificationTemplateCode: 'welcome',
+          transaction,
+        },
+      );
+    }
+  } catch (err) {
     console.log(err);
     await transaction.rollback();
     return [null, false];
-  });
-  const [user, created] = result;
-  if (created) {
-    await notificationService.notifyUser(
-      'You have 1000 free merits to start playing!',
-      user.id,
-      {
-        notificationTemplateCode: 'welcome',
-        transaction
-      }
-    );
-    try {
-      await exp.createUserBlockchain(username);
-    } catch (err) {
-      console.log(err);
-      await transaction.rollback();
-      return [null, false];
-    }
   }
   await transaction.commit();
   return result;
@@ -63,7 +56,7 @@ exp.updateUserMerits = async (userId, merits, options) => {
   if (options && options.transaction) {
     optionsUpdate = {
       lock: options.transaction.LOCK.UPDATE,
-      transaction: options.transaction
+      transaction: options.transaction,
     };
   }
   const user = await User.findById(userId, optionsUpdate);
@@ -78,38 +71,27 @@ exp.updateUserMerits = async (userId, merits, options) => {
 };
 
 /**
- * Insert a user into the table users on the blockchain.
- *
- */
-exp.createUserBlockchain = username =>
-  eos.contract(config.eosUsername).then(contract => {
-    const options = { authorization: [`${config.eosUsername}@active`] };
-    return contract.newuser(username, 1000, options);
-  });
-
-/**
- * Get all the opinions expressed by the user from the opinions table
- * on the blockchain.
+ * Get all the opinions expressed by the user from the opinions table.
  *
  */
 exp.getUserOpinions = userId =>
   Opinion.findAll({
-    where: { userId },
+    where: {userId},
     include: [
       {
         model: Candidate,
         as: 'candidate',
-        required: true
-      }
-    ]
+        required: true,
+      },
+    ],
   });
 
 /**
  * Update lastSeen field of Users table.
  *
  */
-exp.updateLastSeen = async (userId) => {
+exp.updateLastSeen = async userId => {
   const user = await User.findById(userId);
   user.lastSeen = new Date();
   await user.save();
-}
+};
