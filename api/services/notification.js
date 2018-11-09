@@ -188,8 +188,6 @@ exp.getNotifications = async userId => {
     ]
   });
   const res = exp.flattenNotifications(notifications, new Date(user.lastSeen));
-  user.lastSeen = new Date();
-  await user.save();
   return res;
 };
 
