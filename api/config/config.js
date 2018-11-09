@@ -24,16 +24,6 @@ config.postgresDbName = process.env.POSTGRES_DB_NAME;
 config.postgresUser = process.env.POSTGRES_USER;
 config.postgresPass = process.env.POSTGRES_PASSWORD;
 
-// EOS
-config.eosHost = process.env.EOS_MASTER_SERVICE_HOST;
-config.eosPort = process.env.EOS_MASTER_SERVICE_PORT;
-config.eosChainId = process.env.EOS_CHAIN_ID;
-config.eosEosioPrivKey = process.env.EOS_EOSIO_PRIVATE_KEY;
-config.eosEosioPubKey = process.env.EOS_EOSIO_PUBLIC_KEY;
-config.eosUsername = process.env.EOS_USERNAME;
-config.eosUserPrivKey = process.env.EOS_USER_PRIVATE_KEY;
-config.eosUserPubKey = process.env.EOS_USER_PUBLIC_KEY;
-
 // Override or add env specific variables
 const confKeys = Object.keys(envSpecific);
 confKeys.forEach(key => {

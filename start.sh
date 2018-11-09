@@ -13,14 +13,12 @@ fi
 # Create secrets
 echo 'Creating Kubernetes secrets...'
 kubectl apply -f config/secrets/api-secrets.yaml
-kubectl apply -f config/secrets/eos-secrets.yaml
 
 # If it's production environment do not build the docker images because
 # they should have been pushed to dockerhub before.
 if [ "$ENVIRONMENT" != 'production' ]; then
   echo 'Building Docker images...'
   docker build --no-cache -t consensusclubs/api-consensus-clubs:v1.0.1 api/
-  docker build --no-cache -t consensusclubs/blockchain-consensus-clubs:v1.0.0 eos/
 else
   echo 'ATTENTION: Ensure that updated docker images were pushed to DockerHub'
 fi
@@ -34,12 +32,10 @@ kubectl apply -f config/kube-app-entities/configmap-dns.yaml
 
 # App components
 echo 'Creating app components...'
-kubectl apply -f config/kube-app-entities/eos.yaml
 kubectl apply -f config/kube-app-entities/postgres.yaml
 
 # Create tests components if the environment is not production
 if [ "$ENVIRONMENT" != 'production' ]; then
-  kubectl apply -f config/kube-app-entities/eos-tests.yaml
   kubectl apply -f config/kube-app-entities/postgres-tests.yaml
 fi
 
