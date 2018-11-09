@@ -29,6 +29,20 @@ module.exports.set = app => {
     res.send(userOpinions);
   });
 
+  app.post('/user/update-last-seen', auth.authenticate, async (req, res) => {
+    if (!req.auth) {
+      res.status(401).send();
+    }
+    await userService
+      .updateLastSeen(req.auth.id)
+      .catch(err => {
+        // TODO logger
+        console.log(err);
+        res.status(500).send();
+      });
+    res.status(200).send();
+  });
+
   // TODO req.auth
   app.get('/twitter-user-search', async (req, res) => {
     if (!req.query.q) {

@@ -115,3 +115,13 @@ exp.getUserOpinions = userId =>
       },
     ],
   });
+
+/**
+ * Update lastSeen field of Users table.
+ *
+ */
+exp.updateLastSeen = async (userId) => {
+  const user = await User.findById(userId);
+  user.lastSeen = new Date();
+  await user.save();
+}
