@@ -44,8 +44,23 @@ fi
 # a NodePort service is created.
 sleep 15
 kubectl apply -f config/kube-app-entities/node-deployment.yaml
-if [ "$ENVIRONMENT" == 'development' ]; then
-  kubectl apply -f config/kube-app-entities/node-nodeport.yaml
-else
-  kubectl apply -f config/kube-app-entities/node-load-balancer.yaml
-fi
+
+# IMPORTANT!!!:
+# Uncomment this code in case you want the nodeport (locally) or the load
+# balancer (server) to be updated.
+#
+# Keep in mind that if this is uncommented the restart (or start) script has
+# to be run receiving the environment parameter. If context == aws and the parameter
+# production is not passed 'development' would be assumed and the load balancer
+# would be replaced by a nodeport, and consequently the server would go down straightaway.
+#
+# Example for production:
+# ./restart.sh production
+#
+# Comment the code after used to prevent this problem from happening.
+#
+# if [ "$ENVIRONMENT" == 'development' ]; then
+#   kubectl apply -f config/kube-app-entities/node-nodeport.yaml
+# else
+#   kubectl apply -f config/kube-app-entities/node-load-balancer.yaml
+# fi
