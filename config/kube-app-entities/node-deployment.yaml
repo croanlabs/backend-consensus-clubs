@@ -1,7 +1,7 @@
-apiVersion: apps/v1 
+apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nodejs-deployment 
+  name: nodejs-deployment
 spec:
   replicas: 1
   selector:
@@ -13,131 +13,136 @@ spec:
         app: nodejs
     spec:
       containers:
-      - name: nodejs
-        image: consensusclubs/api-consensus-clubs:v1.0.1
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8080
-        command: [ "/bin/bash", "-c", "--" ]
-        args: [ "npm run migrate && node /app/index.js" ]
-        env:
-        - name: AUTH_TOKEN_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets-environment
-              key: authTokenSecret
-        - name: NODE_ENV
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets-environment
-              key: nodeEnv
-        - name: SITE_URL
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets-environment
-              key: siteUrl
-        - name: TWITTER_CALLBACK_URL
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets-environment
-              key: twitterCallbackUrl
-        - name: TWITTER_CONSUMER_KEY
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets-environment
-              key: twitterConsumerKey
-        - name: TWITTER_CONSUMER_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets-environment
-              key: twitterConsumerSecret
-        - name: TWITTER_ACCESS_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets-environment
-              key: twitterAccessToken
-        - name: TWITTER_ACCESS_TOKEN_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets-environment
-              key: twitterAccessTokenSecret
-        - name: SESSION_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets
-              key: sessionSecret
-        - name: POSTGRES_DB_NAME
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets
-              key: postgresDbName
-        - name: POSTGRES_USER
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets
-              key: postgresUser
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets
-              key: postgresPassword
-        - name: POSTGRES_TESTS_DB_NAME
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets
-              key: postgresTestsDbName
-        - name: POSTGRES_TESTS_USER
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets
-              key: postgresTestsUser
-        - name: POSTGRES_TESTS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets
-              key: postgresTestsPassword
-        - name: EOS_CHAIN_ID
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets
-              key: eosChainId
-        - name: EOS_EOSIO_PRIVATE_KEY
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets
-              key: eosEosioPrivateKey
-        - name: EOS_EOSIO_PUBLIC_KEY
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets
-              key: eosEosioPublicKey
-        - name: EOS_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets
-              key: eosUsername
-        - name: EOS_USER_PRIVATE_KEY
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets
-              key: eosUserPrivateKey
-        - name: EOS_USER_PUBLIC_KEY
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets
-              key: eosUserPublicKey
-        - name: EOS_TESTS_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets
-              key: eosTestsUsername
-        - name: EOS_TESTS_USER_PRIVATE_KEY
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets
-              key: eosTestsUserPrivateKey
-        - name: EOS_TESTS_USER_PUBLIC_KEY
-          valueFrom:
-            secretKeyRef:
-              name: api-secrets
-              key: eosTestsUserPublicKey
+        - name: nodejs
+          image: consensusclubs/api-consensus-clubs:v1.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          command: ['/bin/bash', '-c', '--']
+          args: ['npm run migrate && node /app/index.js']
+          env:
+            - name: AUTH_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets-environment
+                  key: authTokenSecret
+            - name: NODE_ENV
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets-environment
+                  key: nodeEnv
+            - name: SITE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets-environment
+                  key: siteUrl
+            - name: TWITTER_CALLBACK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets-environment
+                  key: twitterCallbackUrl
+            - name: TWITTER_CONSUMER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets-environment
+                  key: twitterConsumerKey
+            - name: TWITTER_CONSUMER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets-environment
+                  key: twitterConsumerSecret
+            - name: TWITTER_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets-environment
+                  key: twitterAccessToken
+            - name: TWITTER_ACCESS_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets-environment
+                  key: twitterAccessTokenSecret
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: sessionSecret
+            - name: POSTGRES_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: postgresDbName
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: postgresUser
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: postgresPassword
+            - name: POSTGRES_TESTS_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: postgresTestsDbName
+            - name: POSTGRES_TESTS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: postgresTestsUser
+            - name: POSTGRES_TESTS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: postgresTestsPassword
+            - name: EOS_CHAIN_ID
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: eosChainId
+            - name: EOS_EOSIO_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: eosEosioPrivateKey
+            - name: EOS_EOSIO_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: eosEosioPublicKey
+            - name: EOS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: eosUsername
+            - name: EOS_USER_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: eosUserPrivateKey
+            - name: EOS_USER_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: eosUserPublicKey
+            - name: EOS_TESTS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: eosTestsUsername
+            - name: EOS_TESTS_USER_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: eosTestsUserPrivateKey
+            - name: EOS_TESTS_USER_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: eosTestsUserPublicKey
+            - name: STRIPE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets-environment
+                  key: stripeKey

@@ -1,5 +1,6 @@
 // eslint-disable-next-line import/no-dynamic-require
-const envSpecific = require(`./environments/${process.env.NODE_ENV || 'development'}`);
+const envSpecific = require(`./environments/${process.env.NODE_ENV ||
+  'development'}`);
 const config = {};
 
 config.sessionSecret = process.env.SESSION_SECRET;
@@ -23,6 +24,9 @@ config.postgresPort = process.env.POSTGRES_MASTER_SERVICE_PORT;
 config.postgresDbName = process.env.POSTGRES_DB_NAME;
 config.postgresUser = process.env.POSTGRES_USER;
 config.postgresPass = process.env.POSTGRES_PASSWORD;
+
+// Stripe
+config.stripeKey = process.env.STRIPE_KEY;
 
 // Override or add env specific variables
 const confKeys = Object.keys(envSpecific);
