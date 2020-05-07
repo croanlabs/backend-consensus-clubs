@@ -1,4 +1,4 @@
-# Backend of the Consensus Clubs project.
+# Backend of the Futurities project.
 ## Dependencies
 Install the following dependencies before running the project:
  - Docker
